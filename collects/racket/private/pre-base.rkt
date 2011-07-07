@@ -155,5 +155,7 @@
              (rename define-struct* define-struct)
              define-struct/derived
              struct-field-index
+             struct-field-ref
+             struct-field-set!
              struct-copy
              double-flonum?))

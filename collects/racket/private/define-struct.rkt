@@ -12,6 +12,8 @@
   (#%provide define-struct*
              define-struct/derived
              struct-field-index
+             struct-field-ref
+             struct-field-set!
              struct-copy
              (for-syntax 
 	      (rename checked-struct-info-rec? checked-struct-info?)))
@@ -88,6 +90,20 @@
     (lambda (stx)
       (raise-syntax-error #f "allowed only within a structure type definition" stx)))
 
+  (define-syntax-parameter struct-field-ref
+    (lambda (stx)
+      (raise-syntax-error #f "allowed only within a structure type definition" stx)))
+
+  (define-syntax-parameter struct-field-set!
+    (lambda (stx)
+      (raise-syntax-error #f "allowed only within a structure type definition" stx)))
+
+  
+  
+  
+
+  
+  
   (define (check-struct-type name what)
     (when what
       (unless (struct-type? what)
@@ -469,7 +485,7 @@
                           (lambda ()
                             (quasisyntax/loc stx
                               (define-values (#,struct: #,make- #,? #,@sels #,@sets)
-                                (let-values ([(struct: make- ? -ref -set!)
+                                (letrec-values ([(struct: make- ? -ref -set!)
                                               (syntax-parameterize ([struct-field-index
                                                                      (lambda (stx)
                                                                        (syntax-case stx #,(map field-id fields)
@@ -478,7 +494,9 @@
                                                                                [(null? fields) null]
                                                                                [else (cons #`[(_ #,(field-id (car fields))) #'#,pos]
                                                                                            (loop (cdr fields) (add1 pos)))]))
-                                                                         [(_ name) (raise-syntax-error #f "no such field" stx #'name)]))])
+                                                                         [(_ name) (raise-syntax-error #f "no such field" stx #'name)]))]
+                                                                    [struct-field-ref (make-rename-transformer #'-ref)]
+                                                                    [struct-field-set! (make-rename-transformer #'-set!)])
                                                 (make-struct-type #,reflect-name-expr
                                                                   #,super-struct:
                                                                   #,(- (length fields) auto-count)
