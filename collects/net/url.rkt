@@ -51,6 +51,12 @@
                    (caddr v)))
            v))))
 
+
+(define (url-or-string? x)
+  (or (string? x)
+      (url? x)))
+
+
 (define (url-error fmt . args)
   (raise (make-url-exception
           (apply format fmt
@@ -186,13 +192,13 @@
            (url-error "There are no impure file: ports")]
           [else (url-error "Scheme ~a unsupported" scheme)])))
 
-;; get-impure-port : url [x list (str)] -> in-port
-(define (get-impure-port url [strings '()])
-  (getpost-impure-port #t url #f strings))
+;; get-impure-port : (U url string) [x list (str)] -> in-port
+(define (get-impure-port url-or-string [strings '()])
+  (getpost-impure-port #t (->url url-or-string) #f strings))
 
-;; post-impure-port : url x bytes [x list (str)] -> in-port
-(define (post-impure-port url post-data [strings '()])
-  (getpost-impure-port #f url post-data strings))
+;; post-impure-port : (U url string) x bytes [x list (str)] -> in-port
+(define (post-impure-port url-or-string post-data [strings '()])
+  (getpost-impure-port #f (->url url-or-string) post-data strings))
 
 ;; getpost-pure-port : bool x url x list (str) -> in-port
 (define (getpost-pure-port get? url post-data strings redirections)
@@ -216,9 +222,10 @@
            (file://get-pure-port url)]
           [else (url-error "Scheme ~a unsupported" scheme)])))
 
-(define (get-pure-port/headers url [strings '()] 
+(define (get-pure-port/headers url-or-string [strings '()] 
                                #:redirections [redirections 0]
                                #:status? [status? #f])
+  (define url (->url url-or-string))
   (let redirection-loop ([redirections redirections] [url url])
     (define ip
       (http://getpost-impure-port #t url #f strings))
@@ -267,13 +274,22 @@
                                            (cons status (reverse headers))
                                            (reverse headers)))))])))
 
-;; get-pure-port : url [x list (str)] -> in-port
-(define (get-pure-port url [strings '()] #:redirections [redirections 0])
-  (getpost-pure-port #t url #f strings redirections))
+;; ->url: (U string url) -> url
+(define (->url x)
+  (cond [(string? x)
+         (string->url x)]
+        [(url? x)
+         x]
+        [else
+         (error '->url "~e not url or string" x)]))
+
+;; get-pure-port : (U url string) [x list (str)] -> in-port
+(define (get-pure-port url-or-string [strings '()] #:redirections [redirections 0])
+  (getpost-pure-port #t (->url url-or-string) #f strings redirections))
 
 ;; post-pure-port : url bytes [x list (str)] -> in-port
-(define (post-pure-port url post-data [strings '()])
-  (getpost-pure-port #f url post-data strings 0))
+(define (post-pure-port url-or-string post-data [strings '()])
+  (getpost-pure-port #f (->url url) post-data strings 0))
 
 ;; display-pure-port : in-port -> ()
 (define (display-pure-port server->client)
@@ -372,10 +388,10 @@
              (lambda () (handler server->client))
              (lambda () (close-input-port server->client))))])
     (case-lambda
-      [(url getter handler)
-       (handle-port (getter url) handler)]
-      [(url getter handler params)
-       (handle-port (getter url params) handler)])))
+      [(url-or-string getter handler)
+       (handle-port (getter (->url url-or-string)) handler)]
+      [(url-or-string getter handler params)
+       (handle-port (getter (->url url-or-string) params) handler)])))
 
 ;; purify-port : in-port -> header-string
 (define (purify-port port)
@@ -602,29 +618,29 @@
 (define (url->path url [kind (system-path-convention-type)])
   (file://->path url kind))
 
-;; delete-pure-port : url [x list (str)] -> in-port
-(define (delete-pure-port url [strings '()])
-  (method-pure-port 'delete url #f strings))
+;; delete-pure-port : (U url string) [x list (str)] -> in-port
+(define (delete-pure-port url-or-string [strings '()])
+  (method-pure-port 'delete (->url url-or-string) #f strings))
 
-;; delete-impure-port : url [x list (str)] -> in-port
-(define (delete-impure-port url [strings '()])
-  (method-impure-port 'delete url #f strings))
+;; delete-impure-port : (U url string) [x list (str)] -> in-port
+(define (delete-impure-port url-or-string [strings '()])
+  (method-impure-port 'delete (->url url-or-string) #f strings))
 
-;; head-pure-port : url [x list (str)] -> in-port
-(define (head-pure-port url [strings '()])
-  (method-pure-port 'head url #f strings))
+;; head-pure-port : (U url string) [x list (str)] -> in-port
+(define (head-pure-port url-or-string [strings '()])
+  (method-pure-port 'head (->url url-or-string) #f strings))
 
-;; head-impure-port : url [x list (str)] -> in-port
-(define (head-impure-port url [strings '()])
-  (method-impure-port 'head url #f strings))
+;; head-impure-port : (U url string) [x list (str)] -> in-port
+(define (head-impure-port url-or-string [strings '()])
+  (method-impure-port 'head (->url url-or-string) #f strings))
 
-;; put-pure-port : url bytes [x list (str)] -> in-port
-(define (put-pure-port url put-data [strings '()])
-  (method-pure-port 'put url put-data strings))
+;; put-pure-port : (U url string) bytes [x list (str)] -> in-port
+(define (put-pure-port url-or-string put-data [strings '()])
+  (method-pure-port 'put (->url url-or-string) put-data strings))
 
-;; put-impure-port : url x bytes [x list (str)] -> in-port
-(define (put-impure-port url put-data [strings '()])
-  (method-impure-port 'put url put-data strings))
+;; put-impure-port : (U url string) x bytes [x list (str)] -> in-port
+(define (put-impure-port url-or-string put-data [strings '()])
+  (method-impure-port 'put (->url url-or-string) put-data strings))
 
 ;; method-impure-port : symbol x url x list (str) -> in-port
 (define (method-impure-port method url data strings)
@@ -692,26 +708,26 @@
  (url->string (url? . -> . string?))
  (url->path (->* (url?) ((one-of/c 'unix 'windows)) path-for-some-system?))
 
- (get-pure-port (->* (url?) ((listof string?) #:redirections exact-nonnegative-integer?) input-port?))
- (get-impure-port (->* (url?) ((listof string?)) input-port?))
- (post-pure-port (->* (url? (or/c false/c bytes?)) ((listof string?)) input-port?))
- (post-impure-port (->* (url? bytes?) ((listof string?)) input-port?))
- (head-pure-port (->* (url?) ((listof string?)) input-port?))
- (head-impure-port (->* (url?) ((listof string?)) input-port?))
- (delete-pure-port (->* (url?) ((listof string?)) input-port?))
- (delete-impure-port (->* (url?) ((listof string?)) input-port?))
- (put-pure-port (->* (url? (or/c false/c bytes?)) ((listof string?)) input-port?))
- (put-impure-port (->* (url? bytes?) ((listof string?)) input-port?))
+ (get-pure-port (->* (url-or-string?) ((listof string?) #:redirections exact-nonnegative-integer?) input-port?))
+ (get-impure-port (->* (url-or-string?) ((listof string?)) input-port?))
+ (post-pure-port (->* (url-or-string? (or/c false/c bytes?)) ((listof string?)) input-port?))
+ (post-impure-port (->* (url-or-string? bytes?) ((listof string?)) input-port?))
+ (head-pure-port (->* (url-or-string?) ((listof string?)) input-port?))
+ (head-impure-port (->* (url-or-string?) ((listof string?)) input-port?))
+ (delete-pure-port (->* (url-or-string?) ((listof string?)) input-port?))
+ (delete-impure-port (->* (url-or-string?) ((listof string?)) input-port?))
+ (put-pure-port (->* (url-or-string? (or/c false/c bytes?)) ((listof string?)) input-port?))
+ (put-impure-port (->* (url-or-string? bytes?) ((listof string?)) input-port?))
  (display-pure-port (input-port? . -> . void?))
  (purify-port (input-port? . -> . string?))
- (get-pure-port/headers (->* (url?) ((listof string?) #:redirections exact-nonnegative-integer? #:status? boolean?) 
+ (get-pure-port/headers (->* (url-or-string?) ((listof string?) #:redirections exact-nonnegative-integer? #:status? boolean?) 
                              (values input-port? string?)))
  (netscape/string->url (string? . -> . url?))
- (call/input-url (case-> (-> url?
+ (call/input-url (case-> (-> url-or-string?
                              (-> url? input-port?)
                              (-> input-port? any)
                              any)
-                         (-> url?
+                         (-> url-or-string?
                              (-> url? (listof string?) input-port?)
                              (-> input-port? any)
                              (listof string?)
