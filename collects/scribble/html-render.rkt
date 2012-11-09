@@ -665,57 +665,58 @@
                (lambda (in)
                  (copy-port in (current-output-port)))))
           (parameterize ([xml:empty-tag-shorthand xml:html-empty-tags])
-            (xml:write-xexpr
+            (define an-xexpr
               `(html ,(style->attribs (part-style d))
-                 (head ()
-                   (meta ([http-equiv "content-type"]
-                          [content "text-html; charset=utf-8"]))
-                   ,title
-                   ,(scribble-css-contents scribble-css (lookup-path scribble-css alt-paths))
-                   ,@(map (lambda (style-file)
-                            (if (or (bytes? style-file) (url? style-file))
-                                (scribble-css-contents style-file #f)
-                                (let ([p (lookup-path style-file alt-paths)])
-                                  (unless p (install-file style-file))
-                                  (scribble-css-contents style-file p))))
-                          (append (extract-part-style-files
+                     (head ()
+                           (meta ([http-equiv "content-type"]
+                                  [content "text-html; charset=utf-8"]))
+                           ,title
+                           ,(scribble-css-contents scribble-css (lookup-path scribble-css alt-paths))
+                           ,@(map (lambda (style-file)
+                                    (if (or (bytes? style-file) (url? style-file))
+                                        (scribble-css-contents style-file #f)
+                                        (let ([p (lookup-path style-file alt-paths)])
+                                          (unless p (install-file style-file))
+                                          (scribble-css-contents style-file p))))
+                                  (append (extract-part-style-files
+                                           d
+                                           ri
+                                           'css
+                                           (lambda (p) (part-whole-page? p ri))
+                                           css-addition?
+                                           css-addition-path)
+                                          (list style-file)
+                                          style-extra-files))
+                           ,(scribble-js-contents script-file (lookup-path script-file alt-paths))
+                           ,@(map (lambda (script-file)
+                                    (if (or (bytes? script-file) (url? script-file))
+                                        (scribble-js-contents script-file #f)
+                                        (let ([p (lookup-path script-file alt-paths)])
+                                          (unless p (install-file script-file))
+                                          (scribble-js-contents script-file p))))
+                                  (extract-part-style-files
                                    d
                                    ri
                                    'css
                                    (lambda (p) (part-whole-page? p ri))
-                                   css-addition?
-                                   css-addition-path)
-                                  (list style-file)
-                                  style-extra-files))
-                   ,(scribble-js-contents script-file (lookup-path script-file alt-paths))
-                   ,@(map (lambda (script-file)
-                            (if (or (bytes? script-file) (url? script-file))
-                                (scribble-js-contents script-file #f)
-                                (let ([p (lookup-path script-file alt-paths)])
-                                  (unless p (install-file script-file))
-                                  (scribble-js-contents script-file p))))
-                          (extract-part-style-files
-                           d
-                           ri
-                           'css
-                           (lambda (p) (part-whole-page? p ri))
-                           js-addition?
-                           js-addition-path))
-                   ,(xml:comment "[if IE 6]><style type=\"text/css\">.SIEHidden { overflow: hidden; }</style><![endif]")
-                   ,@(for/list ([p (style-properties (part-style d))]
-                                #:when (head-extra? p))
-                       (head-extra-xexpr p)))
-                 (body ([id ,(or (extract-part-body-id d ri)
-                                 "scribble-racket-lang-org")])
-                   ,@(render-toc-view d ri)
-                   (div ([class "maincolumn"])
-                     (div ([class "main"])
-                       ,@(parameterize ([current-version (extract-version d)])
-                           (render-version d ri))
-                       ,@(navigation d ri #t)
-                       ,@(render-part d ri)
-                       ,@(navigation d ri #f)))
-                   (div ([id "contextindicator"]) nbsp))))))))
+                                   js-addition?
+                                   js-addition-path))
+                           ,(xml:comment "[if IE 6]><style type=\"text/css\">.SIEHidden { overflow: hidden; }</style><![endif]")
+                           ,@(for/list ([p (style-properties (part-style d))]
+                                        #:when (head-extra? p))
+                               (head-extra-xexpr p)))
+                     (body ([id ,(or (extract-part-body-id d ri)
+                                     "scribble-racket-lang-org")])
+                           ,@(render-toc-view d ri)
+                           (div ([class "maincolumn"])
+                                (div ([class "main"])
+                                     ,@(parameterize ([current-version (extract-version d)])
+                                         (render-version d ri))
+                                     ,@(navigation d ri #t)
+                                     ,@(render-part d ri)
+                                     ,@(navigation d ri #f)))
+                           (div ([id "contextindicator"]) nbsp))))
+            (xml:write-xexpr an-xexpr)))))
 
     (define/private (part-parent d ri)
       (collected-info-parent (part-collected-info d ri)))
