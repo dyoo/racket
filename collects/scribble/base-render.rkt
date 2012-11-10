@@ -10,7 +10,8 @@
          setup/path-relativize
          file/convertible
          net/url-structs
-         "render-struct.rkt")
+         "render-struct.rkt"
+         racket/unsafe/ops)
 
 (provide render%
          render<%>)
@@ -86,6 +87,7 @@
     ;; ----------------------------------------
 
     (define/public (extract-part-style-files d ri tag stop-at-part? pred extract)
+      (time
       (let ([ht (make-hash)])
         (let loop ([p d][up? #t][only-up? #f])
           (let ([s (part-style p)])
@@ -106,7 +108,7 @@
                          (part-parts p)))))
         (for/list ([k (in-hash-keys ht)]) (if (or (bytes? k) (url? k))
                                               k 
-                                              (main-collects-relative->path k)))))
+                                              (main-collects-relative->path k))))))
 
     (define/private (extract-style-style-files s ht pred extract)
       (for ([v (in-list (style-properties s))])
@@ -120,32 +122,32 @@
     (define/private (extract-block-style-files p d ri ht pred extract)
       (cond
         [(table? p)
-         (extract-style-style-files (table-style p) ht pred extract)
+         (extract-style-style-files (unsafe-table-style p) ht pred extract)
          (for-each (lambda (blocks)
                      (for-each (lambda (block)
                                  (unless (eq? block 'cont)
                                    (extract-block-style-files block d ri ht pred extract)))
                                blocks))
-                   (table-blockss p))]
+                   (unsafe-table-blockss p))]
         [(itemization? p)
-         (extract-style-style-files (itemization-style p) ht pred extract)
+         (extract-style-style-files (unsafe-itemization-style p) ht pred extract)
          (for-each (lambda (blocks)
                      (extract-flow-style-files blocks d ri ht pred extract))
-                   (itemization-blockss p))]
+                   (unsafe-itemization-blockss p))]
         [(nested-flow? p) 
-         (extract-style-style-files (nested-flow-style p) ht pred extract)
-         (extract-flow-style-files (nested-flow-blocks p) d ri ht pred extract)]
+         (extract-style-style-files (unsafe-nested-flow-style p) ht pred extract)
+         (extract-flow-style-files (unsafe-nested-flow-blocks p) d ri ht pred extract)]
         [(compound-paragraph? p)
-         (extract-style-style-files (compound-paragraph-style p) ht pred extract)
-         (extract-flow-style-files (compound-paragraph-blocks p) d ri ht pred extract)]
+         (extract-style-style-files (unsafe-compound-paragraph-style p) ht pred extract)
+         (extract-flow-style-files (unsafe-compound-paragraph-blocks p) d ri ht pred extract)]
         [(delayed-block? p)
          (let ([v ((delayed-block-resolve p) this d ri)])
            (extract-block-style-files v d ri ht pred extract))]
         [(traverse-block? p)
-         (extract-block-style-files (traverse-block-block p ri) d ri ht pred extract)]
+         (extract-block-style-files (unsafe-traverse-block-block p ri) d ri ht pred extract)]
         [else
-         (extract-style-style-files (paragraph-style p) ht pred extract)
-         (extract-content-style-files (paragraph-content p) d ri ht pred extract)]))
+         (extract-style-style-files (unsafe-paragraph-style p) ht pred extract)
+         (extract-content-style-files (unsafe-paragraph-content p) d ri ht pred extract)]))
 
     (define/public (string-to-implicit-styles e) null)
 
@@ -156,22 +158,22 @@
                         (for ([s (in-list ses)])
                           (extract-style-style-files s ht pred extract))))]
        [(element? e)
-        (when (style? (element-style e))
-          (extract-style-style-files (element-style e) ht pred extract))
-        (extract-content-style-files (element-content e) d ri ht pred extract)]
+        (when (style? (unsafe-element-style e))
+          (extract-style-style-files (unsafe-element-style e) ht pred extract))
+        (extract-content-style-files (unsafe-element-content e) d ri ht pred extract)]
        [(multiarg-element? e)
-        (when (style? (multiarg-element-style e))
-          (extract-style-style-files (multiarg-element-style e) ht pred extract))
-        (extract-content-style-files (multiarg-element-contents e) d ri ht pred extract)]
+        (when (style? (unsafe-multiarg-element-style e))
+          (extract-style-style-files (unsafe-multiarg-element-style e) ht pred extract))
+        (extract-content-style-files (unsafe-multiarg-element-contents e) d ri ht pred extract)]
        [(list? e)
         (for ([e (in-list e)])
           (extract-content-style-files e d ri ht pred extract))]
        [(delayed-element? e)
-        (extract-content-style-files (delayed-element-content e ri) d ri ht pred extract)]
+        (extract-content-style-files (unsafe-delayed-element-content e ri) d ri ht pred extract)]
        [(traverse-element? e)
-        (extract-content-style-files (traverse-element-content e ri) d ri ht pred extract)]
+        (extract-content-style-files (unsafe-traverse-element-content e ri) d ri ht pred extract)]
        [(part-relative-element? e)
-        (extract-content-style-files (part-relative-element-content e ri) d ri ht pred extract)]))
+        (extract-content-style-files (unsafe-part-relative-element-content e ri) d ri ht pred extract)]))
 
     (define/public (extract-version d)
       (or (ormap (lambda (v)
@@ -332,7 +334,7 @@
             [else (traverse-paragraph p fp)]))
 
     (define/public (traverse-table i fp)
-      (for*/fold ([fp fp]) ([ds (in-list (table-blockss i))]
+      (for*/fold ([fp fp]) ([ds (in-list (unsafe-table-blockss i))]
                             [d (in-list ds)])
         (if (eq? d 'cont) 
             fp
@@ -490,7 +492,7 @@
             [else (collect-paragraph p ci)]))
 
     (define/public (collect-table i ci)
-      (for ([d (in-list (apply append (table-blockss i)))])
+      (for ([d (in-list (apply append (unsafe-table-blockss i)))])
         (unless (eq? d 'cont) (collect-block d ci))))
 
     (define/public (collect-itemization i ci)
@@ -577,7 +579,7 @@
         [else (resolve-paragraph p d ri)]))
 
     (define/public (resolve-table i d ri)
-      (for ([f (in-list (apply append (table-blockss i)))])
+      (for ([f (in-list (apply append (unsafe-table-blockss i)))])
         (unless (eq? f 'cont) (resolve-block f d ri))))
 
     (define/public (resolve-itemization i d ri)
@@ -699,7 +701,7 @@
 
     (define/public (render-block p part ri starting-item?)
       (cond
-       [(table? p) (if (memq 'aux (style-properties (table-style p)))
+       [(table? p) (if (memq 'aux (style-properties (unsafe-table-style p)))
                        (render-auxiliary-table p part ri)
                        (render-table p part ri starting-item?))]
        [(itemization? p) (render-itemization p part ri)]
@@ -716,7 +718,7 @@
 
     (define/public (render-table i part ri starting-item?)
       (map (lambda (d) (if (eq? i 'cont) null (render-block d part ri #f)))
-           (apply append (table-blockss i))))
+           (apply append (unsafe-table-blockss i))))
 
     (define/public (render-itemization i part ri)
       (map (lambda (d) (render-flow d part ri #t))

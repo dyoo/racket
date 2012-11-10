@@ -2,7 +2,8 @@
 (require "private/provide-structs.rkt"
          scheme/serialize
          racket/contract/base
-         file/convertible)
+         file/convertible
+         racket/unsafe/ops)
 
 ;; ----------------------------------------
 
@@ -203,6 +204,23 @@
  [collected-info ([number (listof (or/c false/c integer?))]
                   [parent (or/c false/c part?)]
                   [info any/c])])
+
+
+;; Hack: to avoid contract checks in loop-heavy code, we provide
+;; a few unsafe operations to access structure.  Use judiciously.
+(provide unsafe-table-style unsafe-table-blockss
+         unsafe-element-style unsafe-element-content)
+(define (unsafe-table-style e)
+  (unsafe-struct-ref e 0))
+(define (unsafe-table-blockss e)
+  (unsafe-struct-ref e 1))
+(define (unsafe-element-style e)
+  (unsafe-struct-ref e 0))
+(define (unsafe-element-content e)
+  (unsafe-struct-ref e 1))
+
+
+
 
 (provide plain)
 (define plain (make-style #f null))
