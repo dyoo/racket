@@ -87,7 +87,6 @@
     ;; ----------------------------------------
 
     (define/public (extract-part-style-files d ri tag stop-at-part? pred extract)
-      (time
       (let ([ht (make-hash)])
         (let loop ([p d][up? #t][only-up? #f])
           (let ([s (part-style p)])
@@ -102,13 +101,13 @@
                (extract-content-style-files (part-title-content p) d ri ht pred extract)
                (extract-flow-style-files (part-blocks p) d ri ht pred extract))
              (unless only-up?
-               (for-each (lambda (p)
-                           (unless (stop-at-part? p)
-                             (loop p #f #f)))
-                         (part-parts p)))))
+               (for ([p (in-list (part-parts p))])
+                 (unless (stop-at-part? p)
+                   (loop p #f #f))))))
+
         (for/list ([k (in-hash-keys ht)]) (if (or (bytes? k) (url? k))
                                               k 
-                                              (main-collects-relative->path k))))))
+                                              (main-collects-relative->path k)))))
 
     (define/private (extract-style-style-files s ht pred extract)
       (for ([v (in-list (style-properties s))])
@@ -123,17 +122,14 @@
       (cond
         [(table? p)
          (extract-style-style-files (unsafe-table-style p) ht pred extract)
-         (for-each (lambda (blocks)
-                     (for-each (lambda (block)
-                                 (unless (eq? block 'cont)
-                                   (extract-block-style-files block d ri ht pred extract)))
-                               blocks))
-                   (unsafe-table-blockss p))]
+         (for ([blocks (in-list (unsafe-table-blockss p))])
+           (for ([block (in-list blocks)])
+             (unless (eq? block 'cont)
+               (extract-block-style-files block d ri ht pred extract))))]
         [(itemization? p)
          (extract-style-style-files (unsafe-itemization-style p) ht pred extract)
-         (for-each (lambda (blocks)
-                     (extract-flow-style-files blocks d ri ht pred extract))
-                   (unsafe-itemization-blockss p))]
+         (for ([blocks (in-list (unsafe-itemization-blockss p))])
+           (extract-flow-style-files blocks d ri ht pred extract))]
         [(nested-flow? p) 
          (extract-style-style-files (unsafe-nested-flow-style p) ht pred extract)
          (extract-flow-style-files (unsafe-nested-flow-blocks p) d ri ht pred extract)]
