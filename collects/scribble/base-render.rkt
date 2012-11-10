@@ -10,8 +10,7 @@
          setup/path-relativize
          file/convertible
          net/url-structs
-         "render-struct.rkt"
-         racket/unsafe/ops)
+         "render-struct.rkt")
 
 (provide render%
          render<%>)

@@ -2,7 +2,8 @@
 (require "private/provide-structs.rkt"
          racket/contract/base
          xml/xexpr
-         net/url-structs)
+         net/url-structs
+         racket/unsafe/ops)
 
 (provide-structs
  [body-id ([value string?])]
@@ -21,3 +22,8 @@
  [column-attributes ([assoc (listof (cons/c symbol? string?))])]
 
  [head-extra ([xexpr xexpr/c])])
+
+
+(provide unsafe-css-addition-path unsafe-js-addition-path)
+(define (unsafe-css-addition-path a) (unsafe-struct-ref a 0))
+(define (unsafe-js-addition-path a) (unsafe-struct-ref a 0))

@@ -684,7 +684,7 @@
                                            'css
                                            (lambda (p) (part-whole-page? p ri))
                                            css-addition?
-                                           css-addition-path)
+                                           unsafe-css-addition-path)
                                           (list style-file)
                                           style-extra-files))
                            ,(scribble-js-contents script-file (lookup-path script-file alt-paths))
@@ -700,7 +700,7 @@
                                    'css
                                    (lambda (p) (part-whole-page? p ri))
                                    js-addition?
-                                   js-addition-path))
+                                   unsafe-js-addition-path))
                            ,(xml:comment "[if IE 6]><style type=\"text/css\">.SIEHidden { overflow: hidden; }</style><![endif]")
                            ,@(for/list ([p (style-properties (part-style d))]
                                         #:when (head-extra? p))
