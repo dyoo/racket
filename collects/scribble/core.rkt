@@ -209,14 +209,39 @@
 ;; Hack: to avoid contract checks in loop-heavy code, we provide
 ;; a few unsafe operations to access structure.  Use judiciously.
 (provide unsafe-table-style unsafe-table-blockss
-         unsafe-element-style unsafe-element-content)
+         unsafe-itemization-style unsafe-itemization-blockss
+         unsafe-nested-flow-style unsafe-nested-flow-blocks
+         unsafe-compound-paragraph-style unsafe-compound-paragraph-blocks
+         unsafe-paragraph-style unsafe-paragraph-content
+         unsafe-element-style unsafe-element-content
+         unsafe-multiarg-element-style unsafe-multiarg-element-contents)
 (define (unsafe-table-style e)
   (unsafe-struct-ref e 0))
 (define (unsafe-table-blockss e)
   (unsafe-struct-ref e 1))
+(define (unsafe-itemization-style e)
+  (unsafe-struct-ref e 0))
+(define (unsafe-itemization-blockss e)
+  (unsafe-struct-ref e 1))
+(define (unsafe-nested-flow-style e)
+  (unsafe-struct-ref e 0))
+(define (unsafe-nested-flow-blocks e)
+  (unsafe-struct-ref e 1))
+(define (unsafe-compound-paragraph-style e)
+  (unsafe-struct-ref e 0))
+(define (unsafe-compound-paragraph-blocks e)
+  (unsafe-struct-ref e 1))
+(define (unsafe-paragraph-style e)
+  (unsafe-struct-ref e 0))
+(define (unsafe-paragraph-content e)
+  (unsafe-struct-ref e 1))
 (define (unsafe-element-style e)
   (unsafe-struct-ref e 0))
 (define (unsafe-element-content e)
+  (unsafe-struct-ref e 1))
+(define (unsafe-multiarg-element-style e)
+  (unsafe-struct-ref e 0))
+(define (unsafe-multiarg-element-contents e)
   (unsafe-struct-ref e 1))
 
 

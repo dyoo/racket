@@ -144,7 +144,7 @@
          (let ([v ((delayed-block-resolve p) this d ri)])
            (extract-block-style-files v d ri ht pred extract))]
         [(traverse-block? p)
-         (extract-block-style-files (unsafe-traverse-block-block p ri) d ri ht pred extract)]
+         (extract-block-style-files (traverse-block-block p ri) d ri ht pred extract)]
         [else
          (extract-style-style-files (unsafe-paragraph-style p) ht pred extract)
          (extract-content-style-files (unsafe-paragraph-content p) d ri ht pred extract)]))
@@ -169,11 +169,11 @@
         (for ([e (in-list e)])
           (extract-content-style-files e d ri ht pred extract))]
        [(delayed-element? e)
-        (extract-content-style-files (unsafe-delayed-element-content e ri) d ri ht pred extract)]
+        (extract-content-style-files (delayed-element-content e ri) d ri ht pred extract)]
        [(traverse-element? e)
-        (extract-content-style-files (unsafe-traverse-element-content e ri) d ri ht pred extract)]
+        (extract-content-style-files (traverse-element-content e ri) d ri ht pred extract)]
        [(part-relative-element? e)
-        (extract-content-style-files (unsafe-part-relative-element-content e ri) d ri ht pred extract)]))
+        (extract-content-style-files (part-relative-element-content e ri) d ri ht pred extract)]))
 
     (define/public (extract-version d)
       (or (ormap (lambda (v)
