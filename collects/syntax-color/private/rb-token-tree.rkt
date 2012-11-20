@@ -27,21 +27,32 @@
   (class object%
     (init (length #f) (data #f))
 
-    ;;;;;
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; state initialization
     (define rb (rb:new-tree))  ;; rb is an instance of rb:tree.
     (define focus rb:nil)      ;; focus is an instance of rb:node.
     (when length
       (rb:insert-last/data! rb data length))
     (super-new)
-    ;;;;;
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-    ;; methods:
-    (define/public (get-rb) rb)
-    (define/public (set-rb! new-rb) (set! rb new-rb))
-    (define/public (get-focus) focus)
-    (define/public (set-focus! new-focus) (set! focus new-focus))
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; private methods:
+    (define/public (get-rb) 
+      rb)
+    (define/public (set-rb! new-rb) 
+      (set! rb new-rb))
+    (define/public (get-focus) 
+      focus)
+    (define/public (set-focus! new-focus) 
+      (set! focus new-focus))
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ;; public methods:
 
     ;; reset-tree: -> void
     ;; Empty the contents of the tree.
@@ -49,37 +60,42 @@
       (set! rb (rb:new-tree))
       (set! focus rb:nil))
 
-    
     (define/public (get-root)
-      'fixme)
+      focus)
     
     (define/public (is-empty?)
-      'fixme)
+      (nil? (rb:tree-root rb)))
 
     (define/public (get-root-data)
-      'fixme)
+      (rb:node-data focus))
 
     (define/public (get-root-start-position)
-      'fixme)
-
+      (rb:position focus))
 
     (define/public (get-root-end-position)
-      'fixme)
+      (+ (rb:position focus) (rb:node-self-width focus)))
  
     (define/public (add-to-root-length inc)
       'fixme)
 
     (define/public (search! key-position)
-      'fixme)
+      (set-focus! (rb:search rb key-positoin)))
 
     (define/public (search-max!)
-      'fixme)
+      (set-focus! (rb:tree-last rb)))
     
     (define/public (search-min!)
-      'fixme)
+      (set-focus! (rb:tree-first rb)))
 
     (define/public (remove-root!)
-      'fixme)
+      (define node-to-delete focus)
+      (define pred (rb:predecessor focus))
+      (cond [(nil? pred)
+             (set-focus! pred)]
+            [else
+             (set-focus! (rb:successor focus))])
+      (rb:delete! rb node-to-delete))
+      
 
     (define/public (split/data pos)
       'fixme)
