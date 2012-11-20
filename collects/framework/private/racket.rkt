@@ -7,7 +7,7 @@
          racket/class
          mred/mred-sig
          syntax-color/module-lexer
-         (prefix-in token-tree: syntax-color/token-tree)
+         (prefix-in time-acc: syntax-color/private/time-acc)
          "collapsed-snipclass-helpers.rkt"
          "sig.rkt"
          "../gui-utils.rkt"
@@ -719,7 +719,7 @@
     (define/public (tabify-selection [start-pos (get-start-position)]
                                      [end-pos (get-end-position)])
       (unless (is-stopped?) 
-        (define start-time token-tree:total-operation-time)
+        (define start-time time-acc:total-time)
         (define first-para (position-paragraph start-pos))
         (define end-para (position-paragraph end-pos))
         (with-handlers ([exn:break?
@@ -749,7 +749,7 @@
              (end-edit-sequence)
              (when (< first-para end-para)
                (end-busy-cursor))
-             (define stop-time token-tree:total-operation-time)
+             (define stop-time time-acc:total-time)
              (printf "tabify time: ~s\n" (- stop-time start-time)))))))
     
     (define (tabify-all) 

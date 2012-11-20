@@ -11,6 +11,7 @@ added get-regions
          syntax-color/token-tree
          syntax-color/paren-tree
          syntax-color/default-lexer
+         syntax-color/private/time-acc
          string-constants
          "../preferences.rkt"
          "sig.rkt"
@@ -261,7 +262,7 @@ added get-regions
     (define/private (reset-tokens)
       (for-each
        (lambda (ls)
-         (send (lexer-state-tokens ls) reset-tree)
+         (time-acc (send (lexer-state-tokens ls) reset-tree))
          (send (lexer-state-invalid-tokens ls) reset-tree)
          (set-lexer-state-invalid-tokens-start! ls +inf.0)
          (set-lexer-state-up-to-date?! ls #t)
@@ -281,12 +282,12 @@ added get-regions
         (when (and (not (send invalid-tokens is-empty?))
                    (< invalid-tokens-start
                       (lexer-state-current-pos ls)))
-          (send invalid-tokens search-min!)
-          (let ((length (send invalid-tokens get-root-length))
-                (mode (data-lexer-mode (send invalid-tokens get-root-data))))
-            (send invalid-tokens remove-root!)
-            (set-lexer-state-invalid-tokens-start! ls (+ invalid-tokens-start length))
-            (set-lexer-state-invalid-tokens-mode! ls mode))
+          (time-acc (send invalid-tokens search-min!))
+          (time-acc (let ((length (send invalid-tokens get-root-length))
+                          (mode (data-lexer-mode (send invalid-tokens get-root-data))))
+                      (send invalid-tokens remove-root!)
+                      (set-lexer-state-invalid-tokens-start! ls (+ invalid-tokens-start length))
+                      (set-lexer-state-invalid-tokens-mode! ls mode)))
           (sync-invalid ls))))
     
     (define/private (re-tokenize-move-to-next-ls start-time did-something?)
@@ -348,7 +349,7 @@ added get-regions
               ;; version.  In other words, the new greatly outweighs the tree
               ;; operations.
               ;;(insert-last! tokens (new token-tree% (length len) (data type)))
-              (insert-last-spec! (lexer-state-tokens ls) len (make-data type new-lexer-mode backup-delta))
+              (time-acc (insert-last-spec! (lexer-state-tokens ls) len (make-data type new-lexer-mode backup-delta)))
               #; (show-tree (lexer-state-tokens ls))
               (send (lexer-state-parens ls) add-token data len)
               (cond
@@ -357,13 +358,14 @@ added get-regions
                          (lexer-state-current-pos ls))
                       (equal? new-lexer-mode 
                               (lexer-state-invalid-tokens-mode ls)))
-                 (send (lexer-state-invalid-tokens ls) search-max!)
-                 (send (lexer-state-parens ls) merge-tree
-                       (send (lexer-state-invalid-tokens ls) get-root-end-position))
-                 (insert-last! (lexer-state-tokens ls)
-                               (lexer-state-invalid-tokens ls))
-                 (set-lexer-state-invalid-tokens-start! ls +inf.0)
-                 (re-tokenize-move-to-next-ls start-time #t)]
+                 (time-acc 
+                  (send (lexer-state-invalid-tokens ls) search-max!)
+                  (send (lexer-state-parens ls) merge-tree
+                        (send (lexer-state-invalid-tokens ls) get-root-end-position))
+                  (time-acc (insert-last! (lexer-state-tokens ls)
+                                          (lexer-state-invalid-tokens ls)))
+                  (set-lexer-state-invalid-tokens-start! ls +inf.0)
+                  (re-tokenize-move-to-next-ls start-time #t))]
                 [else
                  (continue-re-tokenize start-time #t ls in in-start-pos new-lexer-mode)]))])]))
 
@@ -433,7 +435,7 @@ added get-regions
       (cond
         ((lexer-state-up-to-date? ls)
          (let-values (((orig-token-start orig-token-end valid-tree invalid-tree orig-data)
-                       (split-backward ls (lexer-state-tokens ls) edit-start-pos)))
+                       (time-acc (split-backward ls (lexer-state-tokens ls) edit-start-pos))))
            (send (lexer-state-parens ls) split-tree orig-token-start)
            (set-lexer-state-invalid-tokens! ls invalid-tree)
            (set-lexer-state-tokens! ls valid-tree)
@@ -468,7 +470,7 @@ added get-regions
           (+ change-length (lexer-state-invalid-tokens-start ls))))
         (else
          (let-values (((tok-start tok-end valid-tree invalid-tree data)
-                       (split-backward ls (lexer-state-tokens ls) edit-start-pos)))
+                       (time-acc (split-backward ls (lexer-state-tokens ls) edit-start-pos))))
            (send (lexer-state-parens ls) truncate tok-start)
            (set-lexer-state-tokens! ls valid-tree)
            (set-lexer-state-invalid-tokens-start! ls (+ change-length (lexer-state-invalid-tokens-start ls)))
@@ -611,15 +613,15 @@ added get-regions
                    (lambda (ls)
                      (let ([tokens (lexer-state-tokens ls)]
                            [start-pos (lexer-state-start-pos ls)])
-                       (send tokens for-each
-                             (λ (start len data)
-                               (let ([type (data-type data)])
-                                 (when (should-color-type? type)
-                                   (let ((color (send (get-style-list) find-named-style
-                                                      (token-sym->style type)))
-                                         (sp (+ start-pos start))
-                                         (ep (+ start-pos (+ start len))))
-                                     (change-style color sp ep #f))))))))
+                       (time (send tokens for-each
+                                   (λ (start len data)
+                                      (let ([type (data-type data)])
+                                        (when (should-color-type? type)
+                                          (let ((color (send (get-style-list) find-named-style
+                                                             (token-sym->style type)))
+                                                (sp (+ start-pos start))
+                                                (ep (+ start-pos (+ start len))))
+                                            (change-style color sp ep #f)))))))))
                    lexer-states))
                 (end-edit-sequence))))))))
     
@@ -787,10 +789,10 @@ added get-regions
       (let-values (((tok-start tok-end)
                     (begin
                       (tokenize-to-pos ls position)
-                      (send (lexer-state-tokens ls) search! 
-                            (- position (lexer-state-start-pos ls)))
-                      (values (send (lexer-state-tokens ls) get-root-start-position)
-                              (send (lexer-state-tokens ls) get-root-end-position)))))
+                      (time-acc (send (lexer-state-tokens ls) search! 
+                                      (- position (lexer-state-start-pos ls))))
+                      (time-acc (values (send (lexer-state-tokens ls) get-root-start-position)
+                                        (send (lexer-state-tokens ls) get-root-end-position))))))
         (cond
           ((or (send (lexer-state-parens ls) is-close-pos? tok-start)
                (= (+ (lexer-state-start-pos ls) tok-end) position))
@@ -825,12 +827,12 @@ added get-regions
              (else
               (let-values (((tok-start tok-end)
                             (begin
-                              (send (lexer-state-tokens ls) search!
-                                    (if (> position start-pos)
-                                        (- position start-pos 1)
-                                        0))
-                              (values (send (lexer-state-tokens ls) get-root-start-position)
-                                      (send (lexer-state-tokens ls) get-root-end-position)))))
+                              (time-acc (send (lexer-state-tokens ls) search!
+                                              (if (> position start-pos)
+                                                  (- position start-pos 1)
+                                                  0)))
+                              (time-acc (values (send (lexer-state-tokens ls) get-root-start-position)
+                                                (send (lexer-state-tokens ls) get-root-end-position))))))
                 (cond
                   ((or (send (lexer-state-parens ls) is-open-pos? tok-start)
                        (= (+ start-pos tok-start) position))
@@ -872,8 +874,8 @@ added get-regions
       (let ([ls (find-ls position)])
         (if ls
             (let ([tokens (lexer-state-tokens ls)])
-              (tokenize-to-pos ls position)
-              (send tokens search! (- position (lexer-state-start-pos ls)))
+              (time-acc (tokenize-to-pos ls position))
+              (time-acc (send tokens search! (- position (lexer-state-start-pos ls))))
               (values tokens ls))
             (values #f #f))))
     
@@ -901,8 +903,8 @@ added get-regions
                  position)
                 (else
                  (tokenize-to-pos ls position)
-                 (send tokens search! (- (if (eq? direction 'backward) (sub1 position) position)
-                                         start-pos))
+                 (time-acc (send tokens search! (- (if (eq? direction 'backward) (sub1 position) position)
+                                                   start-pos)))
                  (cond
                    ((and (send tokens get-root-data)
                          (or (eq? 'white-space (data-type (send tokens get-root-data)))

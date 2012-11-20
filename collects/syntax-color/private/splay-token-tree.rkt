@@ -1,12 +1,8 @@
 #lang racket/base
-  (require racket/class "time-acc.rkt")
+  (require racket/class)
   
   (provide token-tree% insert-first! insert-last! insert-last-spec!
            node? node-token-length node-token-data node-left-subtree-length node-left node-right)
-  
-  (define total-operation-time 0)
-  (provide total-operation-time)
-
 
   ;; A tree is 
   ;;  - #f
@@ -243,36 +239,32 @@
       ;; search!: NAT ->
       ;; Moves the node at key-position to the root
       (define/public (search! key-position)
-        (time-acc total-operation-time
-          (when root
-            (set! root (internal-search root key-position)))))
+        (when root
+          (set! root (internal-search root key-position))))
       
       ;; search-max!: ->
       ;; moves the maximum node to the root
       (define/public (search-max!)
-        (time-acc total-operation-time
-          (when root
-            (set! root (search-max root null)))))
+        (when root
+          (set! root (search-max root null))))
       
       ;; search-min!: ->
       ;; moves the minimum node to the root
       (define/public (search-min!)
-        (time-acc total-operation-time
-          (when root
-            (set! root (search-min root null)))))
+        (when root
+          (set! root (search-min root null))))
       
       ;; remove-root!: ->
       ;; Removes the root node
       (define/public (remove-root!)
-        (time-acc total-operation-time
-          (when root
-            (let ((new-node (search-max (node-left root) null)))
-              (cond
-                (new-node
-                 (set-node-right! new-node (node-right root))
-                 (set! root new-node))
-                (else
-                 (set! root (node-right root))))))))
+        (when root
+          (let ((new-node (search-max (node-left root) null)))
+            (cond
+             (new-node
+              (set-node-right! new-node (node-right root))
+              (set! root new-node))
+             (else
+              (set! root (node-right root)))))))
 
       
       ;; split: -> NAT * NAT * token-tree% * token-tree%
@@ -285,26 +277,25 @@
       ;; token and the stop will be for the second.
       (define/public (split/data pos)
         (search! pos)
-        (time-acc total-operation-time
-          (let ((t1 (new token-tree%))
-                (t2 (new token-tree%)))
-            (cond
-             (root
-                 (let ((second-start (get-root-start-position))
-                       (second-stop (get-root-end-position))
-                       (data (node-token-data root)))
-                   (send t1 set-root (node-left root))
-                   (send t2 set-root (node-right root))
-                   (set! root #f)
-                   (cond
-                    ((= pos second-start)
-                     (send t1 search-max!)
-                     (let ((first-start (send t1 get-root-start-position)))
-                       (send t1 remove-root!)
-                       (values first-start second-stop t1 t2 data)))
-                    (else
-                     (values second-start second-stop t1 t2 data)))))
-             (else (values 0 0 t1 t2 #f))))))
+        (let ((t1 (new token-tree%))
+              (t2 (new token-tree%)))
+          (cond
+           (root
+               (let ((second-start (get-root-start-position))
+                     (second-stop (get-root-end-position))
+                     (data (node-token-data root)))
+                 (send t1 set-root (node-left root))
+                 (send t2 set-root (node-right root))
+                 (set! root #f)
+                 (cond
+                  ((= pos second-start)
+                   (send t1 search-max!)
+                   (let ((first-start (send t1 get-root-start-position)))
+                     (send t1 remove-root!)
+                     (values first-start second-stop t1 t2 data)))
+                  (else
+                   (values second-start second-stop t1 t2 data)))))
+           (else (values 0 0 t1 t2 #f)))))
 
       (define/public (split pos)
         (let-values ([(orig-token-start orig-token-end valid-tree invalid-tree orig-data)
@@ -331,39 +322,35 @@
       ;; returns a tree including root and its left subtree
       ;; then root's right subtree
       (define/public (split-after)
-        (time-acc total-operation-time
-          (let ((t1 (new token-tree%))
-                (t2 (new token-tree%)))
-            (when root
-              (send t1 set-root root)
-              (send t2 set-root (node-right root))
-              (set-node-right! root #f)
-              (set! root #f))
-            (values t1 t2))))
+        (let ((t1 (new token-tree%))
+              (t2 (new token-tree%)))
+          (when root
+            (send t1 set-root root)
+            (send t2 set-root (node-right root))
+            (set-node-right! root #f)
+            (set! root #f))
+          (values t1 t2)))
       
       ;; split-before: -> token-tree% * token-tree%
       ;; splits the tree into 2 trees, setting root to #f
       ;; returns root's left subtree and a tree including root
       ;; and its right subtree
       (define/public (split-before)
-        (time-acc total-operation-time
-          (let ((t1 (new token-tree%))
-                (t2 (new token-tree%)))
-            (when root
-              (send t1 set-root (node-left root))
-              (send t2 set-root root)
-              (set-node-left! root #f)
-              (set-node-left-subtree-length! root 0)
-              (set! root #f))
-            (values t1 t2))))
+        (let ((t1 (new token-tree%))
+              (t2 (new token-tree%)))
+          (when root
+            (send t1 set-root (node-left root))
+            (send t2 set-root root)
+            (set-node-left! root #f)
+            (set-node-left-subtree-length! root 0)
+            (set! root #f))
+          (values t1 t2)))
         
       (define/public (to-list)
-        (time-acc total-operation-time
-          (do-to-list root)))
+        (do-to-list root))
       
       (define/public (for-each f)
-        (time-acc total-operation-time
-          (do-splay-tree-for-each f root 0)))
+        (do-splay-tree-for-each f root 0))
       
       (super-instantiate ())))
 
