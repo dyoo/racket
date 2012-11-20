@@ -9,9 +9,9 @@
 (provide token-tree% 
          insert-first! 
          insert-last!
-         ;insert-last-spec!
-         ;node? node-token-length node-token-data 
-         ;node-left-subtree-length node-left node-right
+         insert-last-spec!
+         node? node-token-length node-token-data 
+         node-left-subtree-length node-left node-right
          )
 
 
@@ -89,3 +89,24 @@
   (send tree1 set-rb rb-joined)
   (send tree1 set-focus (rb:tree-root rb-joined))
   (send tree2 reset-tree))
+
+
+
+;; insert-last-spec!: tree natural any -> void
+;; Inserts content at the end of the tree.
+(define (insert-last-spec! tree length data)
+  (rb:insert-last/data! (send tree get-rb) data length))
+
+
+
+
+(define node? 
+  (procedure-rename rb:node? 'node?))
+(define node-token-data
+  (procedure-rename rb:node-data 'node-token-data))
+(define node-token-length
+  (procedure-rename rb:node-self-width 'node-token-length))
+(define (node-left-subtree-length n)
+  (rb:node-subtree-width (rb:node-left n)))
+(define node-left (procedure-rename rb:node-left 'node-left))
+(define node-right (procedure-rename rb:node-right 'node-right))
