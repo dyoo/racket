@@ -362,8 +362,8 @@ added get-regions
                   (send (lexer-state-invalid-tokens ls) search-max!)
                   (send (lexer-state-parens ls) merge-tree
                         (send (lexer-state-invalid-tokens ls) get-root-end-position))
-                  (time-acc (insert-last! (lexer-state-tokens ls)
-                                          (lexer-state-invalid-tokens ls)))
+                  (insert-last! (lexer-state-tokens ls)
+                                (lexer-state-invalid-tokens ls))
                   (set-lexer-state-invalid-tokens-start! ls +inf.0)
                   (re-tokenize-move-to-next-ls start-time #t))]
                 [else
