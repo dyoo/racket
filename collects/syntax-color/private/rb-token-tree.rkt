@@ -11,8 +11,7 @@
          insert-last!
          insert-last-spec!
          node? node-token-length node-token-data 
-         node-left-subtree-length node-left node-right
-         )
+         node-left-subtree-length node-left node-right)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -48,7 +47,57 @@
     ;; Empty the contents of the tree.
     (define/public (reset-tree)
       (set! rb (rb:new-tree))
-      (set! focus rb:nil))))
+      (set! focus rb:nil))
+
+    
+    (define/public (get-root)
+      'fixme)
+    
+    (define/public (is-empty?)
+      'fixme)
+
+    (define/public (get-root-data)
+      'fixme)
+
+    (define/public (get-root-start-position)
+      'fixme)
+
+
+    (define/public (get-root-end-position)
+      'fixme)
+ 
+    (define/public (add-to-root-length inc)
+      'fixme)
+
+    (define/public (search! key-position)
+      'fixme)
+
+    (define/public (search-max!)
+      'fixme)
+    
+    (define/public (search-min!)
+      'fixme)
+
+    (define/public (remove-root!)
+      'fixme)
+
+    (define/public (split/data pos)
+      'fixme)
+
+    (define/public (split pos)
+      'fixme)
+   
+    (define/public (split-after)
+      'fixme)
+
+    (define/public (split-before)
+      'fixme)
+
+    (define/public (to-list)
+      'fixme)
+
+    (define/public (for-each f)
+      'fixme)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
