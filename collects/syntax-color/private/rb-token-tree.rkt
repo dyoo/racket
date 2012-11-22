@@ -2,7 +2,7 @@
 
 ;; rbtree implementation of the token-tree% interface.
 
-(require (prefix-in rb: "red-black.rkt")
+(require (prefix-in rb: (submod "red-black.rkt" uncontracted))
          racket/class)
 
 
@@ -64,7 +64,7 @@
       focus)
     
     (define/public (is-empty?)
-      (nil? (rb:tree-root rb)))
+      (rb:nil-node? (rb:tree-root rb)))
 
     (define/public (get-root-data)
       (rb:node-data focus))
@@ -76,10 +76,10 @@
       (+ (rb:position focus) (rb:node-self-width focus)))
  
     (define/public (add-to-root-length inc)
-      'fixme)
+      (rb:update-node-self-width! focus (+ (rb:node-self-width focus) inc)))
 
     (define/public (search! key-position)
-      (set-focus! (rb:search rb key-positoin)))
+      (set-focus! (rb:search rb key-position)))
 
     (define/public (search-max!)
       (set-focus! (rb:tree-last rb)))
@@ -90,7 +90,7 @@
     (define/public (remove-root!)
       (define node-to-delete focus)
       (define pred (rb:predecessor focus))
-      (cond [(nil? pred)
+      (cond [(rb:nil-node? pred)
              (set-focus! pred)]
             [else
              (set-focus! (rb:successor focus))])
@@ -110,10 +110,24 @@
       'fixme)
 
     (define/public (to-list)
-      'fixme)
+      (reverse 
+       (rb:tree-fold-inorder rb
+                             (lambda (n acc)
+                               (cons (vector (rb:node-self-width n)
+                                             (node-left-subtree-length n)
+                                             (rb:node-data n))
+                                     acc))
+                             '())))
 
     (define/public (for-each f)
-      'fixme)))
+      (rb:tree-fold-inorder rb
+                            (lambda (n acc)
+                              (f acc 
+                                 (rb:node-self-width n)
+                                 (rb:node-data n))
+                              (+ acc (rb:node-self-width n)))
+                            0))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
