@@ -64,37 +64,54 @@
       focus)
     
     (define/public (is-empty?)
-      (rb:nil-node? (rb:tree-root rb)))
+      (rb:nil-node? focus))
 
     (define/public (get-root-data)
-      (rb:node-data focus))
+      (cond
+        [(rb:nil-node? focus)
+         #f]
+        [else
+         (rb:node-data focus)]))
 
     (define/public (get-root-start-position)
-      (rb:position focus))
+      (cond
+        [(rb:nil-node? focus)
+         0]
+        [else
+         (rb:position focus)]))
 
     (define/public (get-root-end-position)
-      (+ (rb:position focus) (rb:node-self-width focus)))
+      (cond
+        [(rb:nil-node? focus)
+         0]
+        [else
+         (+ (rb:position focus) (rb:node-self-width focus))]))
  
     (define/public (add-to-root-length inc)
-      (rb:update-node-self-width! focus (+ (rb:node-self-width focus) inc)))
+      (unless (rb:nil-node? focus)
+        (rb:update-node-self-width! focus (+ (rb:node-self-width focus) inc))))
 
     (define/public (search! key-position)
-      (set-focus! (rb:search rb key-position)))
+      (unless (rb:nil-node? focus)
+        (set-focus! (rb:search rb key-position))))
 
     (define/public (search-max!)
-      (set-focus! (rb:tree-last rb)))
+      (unless (rb:nil-node? focus)
+        (set-focus! (rb:tree-last rb))))
     
     (define/public (search-min!)
-      (set-focus! (rb:tree-first rb)))
+      (unless (rb:nil-node? focus)
+        (set-focus! (rb:tree-first rb))))
 
     (define/public (remove-root!)
-      (define node-to-delete focus)
-      (define pred (rb:predecessor focus))
-      (cond [(rb:nil-node? pred)
-             (set-focus! pred)]
-            [else
-             (set-focus! (rb:successor focus))])
-      (rb:delete! rb node-to-delete))
+      (unless (rb:nil-node? focus)
+        (define node-to-delete focus)
+        (define pred (rb:predecessor focus))
+        (cond [(rb:nil-node? pred)
+               (set-focus! pred)]
+              [else
+               (set-focus! (rb:successor focus))])
+        (rb:delete! rb node-to-delete)))
       
 
     (define/public (split/data pos)
@@ -104,29 +121,52 @@
       'fixme)
    
     (define/public (split-after)
-      'fixme)
+      (cond
+        [(rb:nil-node? focus)
+         (values (new token-tree%) (new token-tree%))]
+        [else
+         (define-values (left right) (rb:split! rb focus))
+         (rb:insert-last! left focus)
+         (set! focus rb:nil)
+         (values left right)]))
+        
 
     (define/public (split-before)
-      'fixme)
+      (cond
+        [(rb:nil-node? focus)
+         (values (new token-tree%) (new token-tree%))]
+        [else
+         (define-values (left right) (rb:split! rb focus))
+         (rb:insert-first! right focus)
+         (set! focus rb:nil)
+         (values left right)]))
+
 
     (define/public (to-list)
-      (reverse 
-       (rb:tree-fold-inorder rb
-                             (lambda (n acc)
-                               (cons (vector (rb:node-self-width n)
-                                             (node-left-subtree-length n)
-                                             (rb:node-data n))
-                                     acc))
-                             '())))
+      (cond
+        [(rb:nil-node? focus) '()]
+        [else
+         (reverse 
+          (rb:tree-fold-inorder rb
+                                (lambda (n acc)
+                                  (cons (vector (rb:node-self-width n)
+                                                (node-left-subtree-length n)
+                                                (rb:node-data n))
+                                        acc))
+                                '()))]))
 
     (define/public (for-each f)
-      (rb:tree-fold-inorder rb
-                            (lambda (n acc)
-                              (f acc 
-                                 (rb:node-self-width n)
-                                 (rb:node-data n))
-                              (+ acc (rb:node-self-width n)))
-                            0))))
+      (cond
+        [(rb:nil-node? focus)
+         (void)]
+        [else
+         (rb:tree-fold-inorder rb
+                               (lambda (n acc)
+                                 (f acc 
+                                    (rb:node-self-width n)
+                                    (rb:node-data n))
+                                 (+ acc (rb:node-self-width n)))
+                               0)]))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
