@@ -37,6 +37,12 @@
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+    (define (rb->token-tree an-rb)
+      (define t (new token-tree%))
+      (send t set-rb! an-rb)
+      (send t set-focus! (rb:tree-root an-rb)))
+
+
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; private methods:
     (define/public (get-rb) 
@@ -65,6 +71,13 @@
     
     (define/public (is-empty?)
       (rb:nil-node? focus))
+
+    (define/public (get-root-length)
+      (cond
+        [(rb:nil-node? focus)
+         0]
+        [else
+         (rb:node-self-width focus)]))
 
     (define/public (get-root-data)
       (cond
@@ -115,7 +128,24 @@
       
 
     (define/public (split/data pos)
-      'fixme)
+      (cond
+        [(rb:nil-node? focus)
+         (values 0 0 (new token-tree%) (new token-tree%) #f)]
+        [else
+         (define-values (pivot residue) (rb:search/residual rb pos))
+         (cond
+           [(rb:nil-node? pivot)
+            (values 0 0 (new token-tree%) (new token-tree%) #f)]
+           [(= residue 0)
+            ;; fixme
+            (void)]
+           [else
+            (define start-pos (- pos residue))
+            (define end-pos (+ start-pos (rb:node-self-width pivot)))
+            (define-values (left right) (rb:split! rb pivot))
+            ;; fixme
+            (void)])]))
+
 
     (define/public (split pos)
       'fixme)
@@ -128,7 +158,7 @@
          (define-values (left right) (rb:split! rb focus))
          (rb:insert-last! left focus)
          (set! focus rb:nil)
-         (values left right)]))
+         (values (rb->token-tree left) (rb->token-tree right))]))
         
 
     (define/public (split-before)
@@ -139,7 +169,7 @@
          (define-values (left right) (rb:split! rb focus))
          (rb:insert-first! right focus)
          (set! focus rb:nil)
-         (values left right)]))
+         (values (rb->token-tree left) (rb->token-tree right))]))
 
 
     (define/public (to-list)
@@ -186,8 +216,8 @@
   (define-values (rb1 rb2)
     (values (send tree1 get-rb) (send tree2 get-rb)))
   (define rb-joined (rb:join! rb2 rb1))
-  (send tree1 set-rb rb-joined)
-  (send tree1 set-focus (rb:tree-root rb-joined))
+  (send tree1 set-rb! rb-joined)
+  (send tree1 set-focus! (rb:tree-root rb-joined))
   (send tree2 reset-tree))
 
 
@@ -205,8 +235,8 @@
   (define-values (rb1 rb2)
     (values (send tree1 get-rb) (send tree2 get-rb)))
   (define rb-joined (rb:join! rb1 rb2))
-  (send tree1 set-rb rb-joined)
-  (send tree1 set-focus (rb:tree-root rb-joined))
+  (send tree1 set-rb! rb-joined)
+  (send tree1 set-focus! (rb:tree-root rb-joined))
   (send tree2 reset-tree))
 
 
