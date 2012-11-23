@@ -138,17 +138,18 @@
             (values 0 0 (new token-tree%) (new token-tree%) #f)]
            [(= residue 0)
             ;; fixme
-            (void)]
+            (values 0 0 (new token-tree%) (new token-tree%) #f)]
            [else
             (define start-pos (- pos residue))
             (define end-pos (+ start-pos (rb:node-self-width pivot)))
             (define-values (left right) (rb:split! rb pivot))
             ;; fixme
-            (void)])]))
+            (values 0 0 (new token-tree%) (new token-tree%) #f)])]))
 
 
     (define/public (split pos)
-      'fixme)
+      ;; fixme
+      (values 0 0 (new token-tree%) (new token-tree%)))
    
     (define/public (split-after)
       (cond
