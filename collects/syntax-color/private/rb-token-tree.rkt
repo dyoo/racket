@@ -32,7 +32,8 @@
     (define rb (rb:new-tree))  ;; rb is an instance of rb:tree.
     (define focus rb:nil)      ;; focus is an instance of rb:node.
     (when length
-      (rb:insert-last/data! rb data length))
+      (rb:insert-last/data! rb data length)
+      (set! focus (rb:tree-root rb)))
     (super-new)
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -67,7 +68,8 @@
       (set! focus rb:nil))
 
     (define/public (get-root)
-      focus)
+      (nil->false focus))
+
     
     (define/public (is-empty?)
       (rb:nil-node? focus))
@@ -258,5 +260,20 @@
   (procedure-rename rb:node-self-width 'node-token-length))
 (define (node-left-subtree-length n)
   (rb:node-subtree-width (rb:node-left n)))
-(define node-left (procedure-rename rb:node-left 'node-left))
-(define node-right (procedure-rename rb:node-right 'node-right))
+
+(define (node-left n)
+  (cond [(eq? n #f) 
+         #f]
+        [else
+         (nil->false (rb:node-left n))]))
+
+(define (node-right n)
+  (cond [(eq? n #f) 
+         #f]
+        [else
+         (nil->false (rb:node-right n))]))
+
+(define-syntax-rule (nil->false n)
+  (if (eq? n rb:nil)
+      #f
+      n))
