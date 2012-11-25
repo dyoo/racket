@@ -27,6 +27,7 @@
 (check-root 0 #f 0 0)
 
 (define (build-tree n len?)
+  (printf "build-tree ~s ~s\n" n len?)
   (when (> n 0)
     (insert-first! t (new token-tree% (length (if len? 5 n)) (data (list n 1))))
     (insert-last! t (new token-tree% (length (if len? 5 n)) (data (list n 2))))
@@ -116,7 +117,9 @@
           (7 2 (2 2))
           (9 1 (1 2)))
         'split (to-list t2)))
+(displayln "build-tree")
 (build-tree 5 #f)
+(displayln "after-tree")
 (let-values (((s e t1 t2)
               (send t split 15)))
   (test 10 'split s)

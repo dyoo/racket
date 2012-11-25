@@ -1915,6 +1915,24 @@
       (define t1+t2 (join! t1 t2))
       (check-equal? (map first (tree-items t1+t2)) '("append" "this"))
       (check-rb-structure! t1+t2))
+
+
+     (test-case
+      "joining back and forth"
+      (define t (new-tree))
+      (for ([i (in-range 20)])
+        (define t2 (new-tree))
+        (insert-last/data! t2 i i)
+        (cond
+         [(even? i)
+          (set! t (join! t t2))]
+         [else
+          (set! t (join! t2 t))]))
+      (check-equal? (tree-items t)
+                    '((19 19) (17 17) (15 15) (13 13) (11 11) (9 9)
+                      (7 7) (5 5) (3 3) (1 1) (0 0) (2 2) (4 4) (6 6) 
+                      (8 8) (10 10) (12 12) (14 14) (16 16) (18 18)))
+      (check-rb-structure! t))
      
      
      (test-case
