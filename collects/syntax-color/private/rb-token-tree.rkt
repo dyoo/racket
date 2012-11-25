@@ -28,7 +28,6 @@
 (define-local-member-name
   get-rb
   set-rb!
-  get-focus
   set-focus!)
 
 
@@ -40,9 +39,11 @@
     ;; state initialization
     (define rb (rb:new-tree))  ;; rb is an instance of rb:tree.
     (define focus rb:nil)      ;; focus is an instance of rb:node.
-    (when length
-      (rb:insert-last/data! rb data length)
-      (set! focus (rb:tree-root rb)))
+    (cond [length
+           (rb:insert-last/data! rb data length)
+           (set! focus (rb:tree-root rb))]
+          [else
+           (printf "Uninitialized tree\n")])
     (super-new)
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -62,8 +63,6 @@
       rb)
     (define/public (set-rb! new-rb) 
       (set! rb new-rb))
-    (define/public (get-focus) 
-      focus)
     (define/public (set-focus! new-focus) 
       (set! focus new-focus))
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -174,7 +173,8 @@
            (define first-token (rb:tree-first rb))
            (rb:delete! rb first-token)
            (define right-tree (rb->token-tree rb))
-           (set-focus! rb:nil)
+
+           (reset-tree)
            (values 0 (rb:node-self-width first-token)
                    (new token-tree%) right-tree 
                    (rb:node-data first-token))]
@@ -186,7 +186,7 @@
            (define last-token (rb:tree-last rb))
            (rb:delete! rb last-token)
            (define left-tree (rb->token-tree rb))
-           (set-focus! rb:nil)
+           (reset-tree)
            (values (- (rb:node-self-width last-token) pos) pos
                    left-tree (new token-tree%) 
                    (rb:node-data last-token))]
@@ -209,6 +209,9 @@
              ;; have hit case 1.
              (define left-last (rb:tree-last left))
              (rb:delete! left left-last)
+
+             (reset-tree)
+
              (values (- pos (rb:node-self-width left-last))
                      (+ pos (rb:node-self-width pivot-node))
                      (rb->token-tree left)
@@ -220,6 +223,9 @@
              (define start-pos (- pos residue))
              (define end-pos (+ start-pos (rb:node-self-width pivot-node)))
              (define-values (left right) (rb:split! rb pivot-node))
+
+             (reset-tree)
+
              (values start-pos end-pos 
                      (rb->token-tree left)
                      (rb->token-tree right)
@@ -298,6 +304,13 @@
 (define (insert-first! tree1 tree2)
   (define-values (rb1 rb2)
     (values (send tree1 get-rb) (send tree2 get-rb)))
+  (printf "in insert-first, t1 is ~s :  ~s\n"
+          rb1 
+          (rb:tree-items rb1))
+  (printf "in insert-first, t2 is ~s :  ~s\n"
+          rb2 
+          (rb:tree-items rb2))
+
   (define rb-joined (rb:join! rb2 rb1))
   (send tree1 set-rb! rb-joined)
   (send tree1 set-focus! (rb:tree-root rb-joined))

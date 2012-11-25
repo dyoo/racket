@@ -395,15 +395,34 @@
 ;; insert-first/data!: tree data width -> void
 ;; Insert before the first element of the tree.
 (define (insert-first/data! a-tree data width)
+  (unless (eq? (tree-bh a-tree) (computed-black-height (tree-root a-tree)))
+    (error 'join "uh oh before insert-first!" (tree-items a-tree)))
+
+
   (define x (new-node data width))
-  (insert-first! a-tree x))
+  (insert-first! a-tree x)
+
+  (unless (eq? (tree-bh a-tree) (computed-black-height (tree-root a-tree)))
+    (error 'join "uh oh after insert-first!" (tree-items a-tree)))
+
+)
 
 
 ;; insert-last/data!: tree data width -> void
 ;; Insert after the last element in the tree.
 (define (insert-last/data! a-tree data width)
+  (unless (eq? (tree-bh a-tree) (computed-black-height (tree-root a-tree)))
+    (error 'join "uh oh before insert-last!" (tree-items a-tree)))
+
+
   (define x (new-node data width))
-  (insert-last! a-tree x))
+  (insert-last! a-tree x)
+
+
+  (unless (eq? (tree-bh a-tree) (computed-black-height (tree-root a-tree)))
+    (error 'join "uh oh after insert-last!" (tree-items a-tree)))
+  
+  )
 
 
 ;; insert-before/data!: tree data width -> void
@@ -839,6 +858,14 @@
 ;; Destructively concatenates trees t1 and t2, and
 ;; returns a tree that represents the join.
 (define (join! t1 t2)
+
+  (unless (eq? (tree-bh t1) (computed-black-height (tree-root t1)))
+    (error 'join "uh oh on t1 9!"))
+
+  (unless (eq? (tree-bh t2) (computed-black-height (tree-root t2)))
+    (error 'join "uh oh on t2 8! ~s" (tree-items t2)))
+
+
   (cond
     [(nil? (tree-root t2))
      t1]
@@ -851,7 +878,12 @@
      (delete! t2 x)
      ;; Next, delegate to the more general concat! function, using
      ;; x as the pivot.
-     (concat! t1 x t2)]))
+     (define result (concat! t1 x t2))
+
+     (unless (eq? (tree-bh result) (computed-black-height (tree-root result)))
+       (error 'join "uh oh 10!"))
+     
+     result]))
 
 
 ;; concat!: tree node tree -> tree
@@ -868,9 +900,19 @@
 ;; tree-first/tree-last pointers on entry; we compute this lazily due
 ;; to how this is used by split!.
 (define (concat! t1 x t2)
+  (printf "concat\n")
+
+  (unless (eq? (tree-bh t2) (computed-black-height (tree-root t2)))
+    (error 'concat "uh oh 7!"))
+
+  (unless (eq? (tree-bh t1) (computed-black-height (tree-root t1)))
+    (error 'concat "uh oh 6!"))
+
+
   (cond
 
     [(nil? (tree-root t1))
+     (printf "case 1\n")
      (set-node-left! x nil)
      (set-node-right! x nil)
      (set-node-subtree-width! x (node-self-width x))
@@ -878,22 +920,39 @@
      ;; This only happens in the context of split!
      (force-tree-first! t2)
      (insert-first! t2 x)
+
+     (unless (eq? (tree-bh t2) (computed-black-height (tree-root t2)))
+       (error 'split1 "uh oh 3!"))
+
+
      t2]
     
     [(nil? (tree-root t2))
+
+     (unless (eq? (tree-bh t1) (computed-black-height (tree-root t1)))
+       (error 'split1 "uh oh 5!"))
+
+
+     (printf "case 2\n")
      ;; symmetric with the case above:
      (set-node-left! x nil)
      (set-node-right! x nil)
      (set-node-subtree-width! x (node-self-width x))
      (force-tree-last! t1)
      (insert-last! t1 x)
+
+
+     (unless (eq? (tree-bh t1) (computed-black-height (tree-root t1)))
+       (error 'split1 "uh oh 4!"))
+
      t1]
     
     [else
      (define t1-bh (tree-bh t1))
      (define t2-bh (tree-bh t2))
      (cond
-      [(>= t1-bh t2-bh)     
+      [(>= t1-bh t2-bh) 
+       (printf "case 3\n")    
        ;; Note: even if tree-last is invalid, nothing gets hurt here.
        (set-tree-last! t1 (tree-last t2))
 
@@ -916,17 +975,22 @@
        t1]
       
       [else
+       (printf "case 4\n")
        ;; Symmetric case:
        (set-tree-first! t2 (tree-first t1))
        (define a (tree-root t1))
+       (printf "computing b ~s ~s ~s\n" t2 (tree-bh t2) t1-bh)
        (define b (find-leftmost-black-node-with-bh t2 t1-bh))
+       (printf "computed b\n")
        (transplant-for-concat! t2 b x)
        (set-node-color! x red)
        (set-node-left! x a)
        (set-node-parent! a x)
        (set-node-right! x b)
        (set-node-parent! b x)
+       (printf "updating subtree width\n")
        (update-subtree-width-up-to-root! x)
+       (printf "after updating subtree width\n")
        (fix-after-insert! t2 x)
        t2])]))
 
@@ -968,6 +1032,7 @@
 ;; Finds the rightmost black node with the particular black height
 ;; we're looking for.
 (define (find-leftmost-black-node-with-bh a-tree bh)
+  (printf "computed bh is: ~s\n" (computed-black-height (tree-root a-tree)))
   (let loop ([n (tree-root a-tree)]
              [current-height (tree-bh a-tree)])
     (cond
@@ -988,6 +1053,11 @@
 ;; a valid tree-first or tree-last.  I want to avoid recomputing
 ;; it for each fresh subtree I construct.
 (define (split! a-tree x)
+
+  (unless (eq? (tree-bh a-tree) (computed-black-height (tree-root a-tree)))
+    (error 'concat "uh oh 11!"))
+
+
   (define x-child-bh (computed-black-height (node-left x)))
   (define ancestor (node-parent x))
   (define ancestor-child-bh (if (black? x) (add1 x-child-bh) x-child-bh))
@@ -1016,6 +1086,13 @@
        (force-tree-last! L)
        (force-tree-first! R)
        (force-tree-last! R)
+
+       ;; DEBUG:
+       (unless (eq? (tree-bh L) (computed-black-height (tree-root L)))
+         (error 'split1 "uh oh 1!"))
+       (unless (eq? (tree-bh R) (computed-black-height (tree-root R)))
+         (error 'split1 "uh oh 2!"))
+
        (values L R)]
       [else
        (define new-ancestor (node-parent ancestor))
@@ -1035,7 +1112,8 @@
          (loop new-ancestor
                new-ancestor-child-bh
                new-coming-from-the-right?
-               (concat! subtree ancestor L)
+               (begin (printf "left concat\n")
+                      (concat! subtree ancestor L))
                R)]
         [else
          (define subtree (node->tree/bh (node-right ancestor) 
@@ -1044,7 +1122,8 @@
                new-ancestor-child-bh
                new-coming-from-the-right?
                L
-               (concat! R ancestor subtree))])])))
+               (begin (printf "right concat\n")
+                      (concat! R ancestor subtree)))])])))
 
 
 ;; update-node-self-width!: node exact-nonnegative-integer -> void Updates
