@@ -983,6 +983,7 @@
 ;; split!: tree node -> (values tree tree)
 ;; Partitions the tree into two trees: the predecessors of x, and the
 ;; successors of x.  Also mutates x into a singleton node.
+;; Finally, modifies a-tree so it looks empty.
 ;;
 ;; Note: during the loop, the L and R trees do not necessarily have
 ;; a valid tree-first or tree-last.  I want to avoid recomputing
@@ -1000,6 +1001,12 @@
   (set-node-right! x nil)
   (set-node-left! x nil)
   (set-node-color! x red)
+
+  ;; Clear out a-tree so it's unusable.
+  (set-tree-root! a-tree nil)
+  (set-tree-first! a-tree nil)
+  (set-tree-last! a-tree nil)
+  (set-tree-bh! a-tree 0)
 
   ;; The loop walks the ancestors of x, adding the left and right
   ;; elements appropriately.
