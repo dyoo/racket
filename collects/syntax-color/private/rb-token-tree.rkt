@@ -73,7 +73,7 @@
     ;; reset-tree: -> void
     ;; Empty the contents of the tree.
     (define/public (reset-tree)
-      (set! rb (rb:new-tree))
+      (rb:reset! rb)
       (set! focus rb:nil))
 
     (define/public (get-root)
@@ -170,7 +170,7 @@
            (define first-token (rb:tree-first rb))
            (rb:delete! rb first-token)
            (define right-tree (rb->token-tree rb))
-           (reset-tree)
+           (set! focus rb:nil)
            (values 0 (rb:node-self-width first-token)
                    (new token-tree%) right-tree 
                    (rb:node-data first-token))]
@@ -182,7 +182,7 @@
            (define last-token (rb:tree-last rb))
            (rb:delete! rb last-token)
            (define left-tree (rb->token-tree rb))
-           (reset-tree)
+           (set! focus rb:nil)
            (values (- (rb:node-self-width last-token) pos) pos
                    left-tree (new token-tree%) 
                    (rb:node-data last-token))]
@@ -205,7 +205,7 @@
              ;; have hit case 1.
              (define left-last (rb:tree-last left))
              (rb:delete! left left-last)
-             (reset-tree)
+             (set! focus rb:nil)
              (values (- pos (rb:node-self-width left-last))
                      (+ pos (rb:node-self-width pivot-node))
                      (rb->token-tree left)
@@ -217,7 +217,7 @@
              (define start-pos (- pos residue))
              (define end-pos (+ start-pos (rb:node-self-width pivot-node)))
              (define-values (left right) (rb:split! rb pivot-node))
-             (reset-tree)
+             (set! focus rb:nil)
              (values start-pos end-pos 
                      (rb->token-tree left)
                      (rb->token-tree right)

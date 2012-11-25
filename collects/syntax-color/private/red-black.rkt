@@ -54,6 +54,7 @@
 
 (provide [contract-out 
           [tree? (any/c . -> . boolean?)]
+
           [tree-root (tree? . -> . node?)]
           [tree-first (tree? . -> . node?)]
           [tree-last (tree? . -> . node?)]
@@ -95,6 +96,7 @@
                          [n (t) (non-nil-node-in-tree? t)])
                         (values [t1 tree?] [t2 tree?]))]
 
+          [reset! (tree? . -> . any)]
                        
           [search (tree? natural-number/c . -> . node?)]
           [search/residual (tree? natural-number/c . -> . (values node? natural-number/c))]
@@ -841,9 +843,13 @@
 (define (join! t1 t2)
   (cond
     [(nil? (tree-root t2))
-     t1]
+     (define result (clone! t1))
+     (reset! t1)
+     result]
     [(nil? (tree-root t1))
-     t2]
+     (define result (clone! t2))
+     (reset! t2)
+     result]
     [else
      ;; First, remove element x from t2.  x will act as the
      ;; pivot point.
@@ -878,7 +884,9 @@
      ;; This only happens in the context of split!
      (force-tree-first! t2)
      (insert-first! t2 x)
-     t2]
+     (define result (clone! t2))
+     (reset! t2)
+     result]
     
     [(nil? (tree-root t2))
      ;; symmetric with the case above:
@@ -887,7 +895,9 @@
      (set-node-subtree-width! x (node-self-width x))
      (force-tree-last! t1)
      (insert-last! t1 x)
-     t1]
+     (define result (clone! t1))
+     (reset! t1)
+     result]
     
     [else
      (define t1-bh (tree-bh t1))
@@ -913,7 +923,10 @@
        ;; lazily.
        (update-subtree-width-up-to-root! x)
        (fix-after-insert! t1 x)
-       t1]
+       (define result (clone! t1))
+       (reset! t1) 
+       (reset! t2)
+       result]
       
       [else
        ;; Symmetric case:
@@ -928,7 +941,10 @@
        (set-node-parent! b x)
        (update-subtree-width-up-to-root! x)
        (fix-after-insert! t2 x)
-       t2])]))
+       (define result (clone! t2))
+       (reset! t1)
+       (reset! t2)
+       result])]))
 
 
 ;; transplant-for-concat!: tree node node -> void
@@ -1003,10 +1019,7 @@
   (set-node-color! x red)
 
   ;; Clear out a-tree so it's unusable.
-  (set-tree-root! a-tree nil)
-  (set-tree-first! a-tree nil)
-  (set-tree-last! a-tree nil)
-  (set-tree-bh! a-tree 0)
+  (reset! a-tree)
 
   ;; The loop walks the ancestors of x, adding the left and right
   ;; elements appropriately.
@@ -1052,6 +1065,28 @@
                new-coming-from-the-right?
                L
                (concat! R ancestor subtree))])])))
+
+
+;; reset!: tree -> void
+;; Resets a tree to empty.
+(define (reset! a-tree)
+  (set-tree-root! a-tree nil)
+  (set-tree-first! a-tree nil)
+  (set-tree-last! a-tree nil)
+  (set-tree-bh! a-tree 0))
+
+
+
+;; clone!: tree -> tree
+;; Shallow copy of the components of the tree.
+(define (clone! a-tree)
+  (tree (tree-root a-tree)
+        (tree-first a-tree)
+        (tree-last a-tree)
+        (tree-bh a-tree)))
+
+
+
 
 
 ;; update-node-self-width!: node exact-nonnegative-integer -> void Updates
@@ -1233,6 +1268,7 @@
            join!
            concat!
            split!
+           reset!
 
            update-node-self-width!
            
