@@ -1,7 +1,16 @@
 #lang racket/base
 
 ;; rbtree implementation of the token-tree% interface.
+;;
+;; We have to adapt a few things:
+;;
+;;     * rb-trees don't move around their root on search, so we need
+;;       to keep a separate "focus".
+;;
+;;     * We use rb:nil, but the original client uses #f to indicate
+;;     empty trees.
 
+;; For speed, we use the uncontracted forms in red-black.rkt.
 (require (prefix-in rb: (submod "red-black.rkt" uncontracted))
          racket/class)
 
@@ -129,24 +138,92 @@
         (rb:delete! rb node-to-delete)))
       
 
+
+    ;; split/data: natural -> (values natural natural token-tree% token-tree% boolean)
+    ;; Splits the tree into 2 trees, invalidating our own to nil.
+    ;;
+    ;; The first two returned values represent the start and end
+    ;; position of the token(s) at pos.  The next two values represent
+    ;; the tokens before pos and after pos, not including any tokens
+    ;; adjacent to pos.
+    ;;
+    ;; Thus if pos is on a token boundary, 2 tokens will be dropped.
+    ;;
+    ;; In this case, the start will be for the first dropped
+    ;; token and the stop will be for the second.
+    ;;
+    ;; The last value is the data at the searched position.
     (define/public (split/data pos)
       (cond
         [(rb:nil-node? focus)
          (values 0 0 (new token-tree%) (new token-tree%) #f)]
         [else
-         (define-values (pivot residue) (rb:search/residual rb pos))
+
+         ;; We have a few cases to check for:
+         ;; Is the pivot on the edge boundary of the first or last tokens?
+         ;; Is the pivot on the boundary between two tokens?
          (cond
-           [(rb:nil-node? pivot)
-            (values 0 0 (new token-tree%) (new token-tree%) #f)]
-           [(= residue 0)
-            ;; fixme
-            (values 0 0 (new token-tree%) (new token-tree%) #f)]
-           [else
-            (define start-pos (- pos residue))
-            (define end-pos (+ start-pos (rb:node-self-width pivot)))
-            (define-values (left right) (rb:split! rb pivot))
-            ;; fixme
-            (values 0 0 (new token-tree%) (new token-tree%) #f)])]))
+
+          ;; Case 1.
+          ;; At the start-edge of the first token?
+          [(= pos 0)
+           ;; If so, just delete the first token.
+           (define first-token (rb:tree-first rb))
+           (rb:delete! rb first-token)
+           (define right-tree (rb->token-tree rb))
+           (set-focus! rb:nil)
+           (values 0 (rb:node-self-width first-token)
+                   (new token-tree%) right-tree 
+                   (rb:node-data first-token))]
+
+          ;; Case 2.
+          ;; At the end-edge of the last token?
+          [(= pos (rb:node-subtree-width (rb:tree-root rb)))
+           ;; Symmetric case.
+           (define last-token (rb:tree-last rb))
+           (rb:delete! rb last-token)
+           (define left-tree (rb->token-tree rb))
+           (set-focus! rb:nil)
+           (values (- (rb:node-self-width last-token) pos) pos
+                   left-tree (new token-tree%) 
+                   (rb:node-data last-token))]
+
+          [else
+           ;; Otherwise, pos is either outside or somewhere inside the
+           ;; range.
+           (define-values (pivot-node residue) (rb:search/residual rb pos))
+           (cond
+            ;; If we're outside, just return the nil case:
+            [(rb:nil-node? pivot-node)
+             (values 0 0 (new token-tree%) (new token-tree%) #f)]
+
+            ;; If the residue after searching is zero, then we're right
+            ;; on the boundary between two tokens, and must delete both.
+            [(= residue 0)
+             (define-values (left right) (rb:split! rb pivot-node))
+
+             ;; We know the left is non-empty, since otherwise we would
+             ;; have hit case 1.
+             (define left-last (tree-last left))
+             (rb:delete! left left-last)
+             (values (- pos (rb:node-self-width left-last))
+                     (+ pos (rb-node-self-width pivot-node))
+                     (rb->token-tree left)
+                     (rb->token-tree right)
+                     (rb:node-data pivot-node))]
+
+            [else
+             ;; Otherwise, the position is inside just one token.
+             (define start-pos (- pos residue))
+             (define end-pos (+ start-pos (rb:node-self-width pivot-node)))
+             (define-values (left right) (rb:split! rb pivot-node))
+             (values start-pos end-pos 
+                     (rb->token-tree left)
+                     (rb->token-tree right)
+                     (rb:node-data pivot-node))])])]))
+    
+
+    
 
 
     (define/public (split pos)
