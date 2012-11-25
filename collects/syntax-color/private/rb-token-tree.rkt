@@ -11,7 +11,7 @@
 ;;     empty trees.
 
 ;; For speed, we use the uncontracted forms in red-black.rkt.
-(require (prefix-in rb: (submod "red-black.rkt" uncontracted))
+(require (prefix-in rb: "red-black.rkt" #;(submod "red-black.rkt" uncontracted))
          racket/class)
 
 
@@ -47,10 +47,13 @@
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+    ;; rb->token-tree: rb:tree -> token-tree%
+    ;; Wraps a red-black tree into a token tree.
     (define (rb->token-tree an-rb)
       (define t (new token-tree%))
       (send t set-rb! an-rb)
-      (send t set-focus! (rb:tree-root an-rb)))
+      (send t set-focus! (rb:tree-root an-rb))
+      t)
 
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
