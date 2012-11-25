@@ -204,10 +204,10 @@
 
              ;; We know the left is non-empty, since otherwise we would
              ;; have hit case 1.
-             (define left-last (tree-last left))
+             (define left-last (rb:tree-last left))
              (rb:delete! left left-last)
              (values (- pos (rb:node-self-width left-last))
-                     (+ pos (rb-node-self-width pivot-node))
+                     (+ pos (rb:node-self-width pivot-node))
                      (rb->token-tree left)
                      (rb->token-tree right)
                      (rb:node-data pivot-node))]
@@ -223,12 +223,12 @@
                      (rb:node-data pivot-node))])])]))
     
 
-    
-
 
     (define/public (split pos)
-      ;; fixme
-      (values 0 0 (new token-tree%) (new token-tree%)))
+      (define-values (start-pos end-pos left-tree right-tree data)
+        (split/data pos))
+      (values start-pos end-pos left-tree right-tree))
+
    
     (define/public (split-after)
       (cond
