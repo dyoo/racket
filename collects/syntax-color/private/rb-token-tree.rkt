@@ -11,7 +11,7 @@
 ;;     empty trees.
 
 ;; For speed, we use the uncontracted forms in red-black.rkt.
-(require (prefix-in rb: "red-black.rkt" #;(submod "red-black.rkt" uncontracted))
+(require (prefix-in rb: (submod "red-black.rkt" uncontracted))
          racket/class)
 
 
@@ -78,7 +78,6 @@
 
     (define/public (get-root)
       (nil->false focus))
-
     
     (define/public (is-empty?)
       (rb:nil-node? focus))
