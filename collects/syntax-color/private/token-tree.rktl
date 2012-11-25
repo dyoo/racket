@@ -27,11 +27,8 @@
 (check-root 0 #f 0 0)
 
 (define (build-tree n len?)
-  (printf "build-tree ~s ~s\n" n len?)
   (when (> n 0)
-    (printf "insert first\n")
     (insert-first! t (new token-tree% (length (if len? 5 n)) (data (list n 1))))
-    (printf "insert last\n")
     (insert-last! t (new token-tree% (length (if len? 5 n)) (data (list n 2))))
     (build-tree (sub1 n) len?)))
 (define (check-tree n)
