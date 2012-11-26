@@ -252,11 +252,12 @@
           [else
            ;; Otherwise, pos is somewhere inside the range, and we're
            ;; guaranteed to find the pivot somewhere.
-           (define-values (pivot-node residue) (rb:search/residual rb pos))
+           (search! pos)
            (cond
             ;; If the residue after searching is zero, then we're right
             ;; on the boundary between two tokens, and must delete both.
-            [(= residue 0)
+            [(= focus-pos pos)
+             (define pivot-node focus)
              (define-values (left right) (rb:split! rb pivot-node))
 
              ;; We know the left is non-empty, since otherwise we would
@@ -277,7 +278,8 @@
 
             [else
              ;; Otherwise, the position is inside just one token.
-             (define start-pos (- pos residue))
+             (define pivot-node focus)
+             (define start-pos focus-pos)
              (define end-pos (+ start-pos (rb:node-self-width pivot-node)))
              (define-values (left right) (rb:split! rb pivot-node))
              (set-focus! rb:nil -1)
