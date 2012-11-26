@@ -40,9 +40,10 @@
     ;; state initialization
     (define rb (rb:new-tree))  ;; rb is an instance of rb:tree.
     (define focus rb:nil)      ;; focus is an instance of rb:node.
+    (define focus-pos 0)       ;; optimization: the position of the focus.
     (when length
       (rb:insert-last/data! rb data length)
-      (set-focus! (rb:tree-root rb)))
+      (set-focus! (rb:tree-root rb) 0))
     (super-new)
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -52,7 +53,7 @@
     (define (rb->token-tree an-rb)
       (define t (new token-tree%))
       (send t set-rb! an-rb)
-      (send t set-focus! (rb:tree-root an-rb))
+      (send t set-focus! (rb:tree-first an-rb) 0)
       t)
 
 
@@ -62,8 +63,9 @@
       rb)
     (define/public (set-rb! new-rb) 
       (set! rb new-rb))
-    (define/public (set-focus! new-focus) 
-      (set! focus new-focus))
+    (define/public (set-focus! new-focus new-pos) 
+      (set! focus new-focus)
+      (set! focus-pos new-pos))
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -75,7 +77,7 @@
     ;; Empty the contents of the tree.
     (define/public (reset-tree)
       (rb:reset! rb)
-      (set-focus! rb:nil))
+      (set-focus! rb:nil 0))
 
     (define/public (get-root)
       (nil->false focus))
@@ -102,14 +104,14 @@
         [(rb:nil-node? focus)
          0]
         [else
-         (rb:position focus)]))
+         focus-pos]))
 
     (define/public (get-root-end-position)
       (cond
         [(rb:nil-node? focus)
          0]
         [else
-         (+ (rb:position focus) (rb:node-self-width focus))]))
+         (+ focus-pos (rb:node-self-width focus))]))
  
     (define/public (add-to-root-length inc)
       (unless (rb:nil-node? focus)
@@ -121,28 +123,38 @@
       (unless (rb:nil-node? focus)
         (cond
          [(<= key-position 0)
-          (set-focus! (rb:tree-first rb))]
+          (set-focus! (rb:tree-first rb)
+                      0)]
          [(>= key-position (rb:node-subtree-width (rb:tree-root rb)))
-          (set-focus! (rb:tree-last rb))]
+          (set-focus! (rb:tree-last rb)
+                      (last-pos rb))]
          [else
-          (set-focus! (rb:search rb key-position))])))
+          (define found-node (rb:search rb key-position))
+          (set-focus! found-node (rb:position found-node))])))
+    
+
+    ;; last-pos: rb:tree -> natural
+    ;; Returns the starting position of the last element in rb.
+    (define (last-pos rb)
+      (- (rb:node-subtree-length rb) 
+         (rb:node-self-width (rb:tree-last rb))))
          
     (define/public (search-max!)
       (unless (rb:nil-node? focus)
-        (set-focus! (rb:tree-last rb))))
+        (set-focus! (rb:tree-last rb) (last-pos rb))))
     
     (define/public (search-min!)
       (unless (rb:nil-node? focus)
-        (set-focus! (rb:tree-first rb))))
+        (set-focus! (rb:tree-first rb) 0)))
 
     (define/public (remove-root!)
       (unless (rb:nil-node? focus)
         (define node-to-delete focus)
         (define pred (rb:predecessor focus))
         (cond [(rb:nil-node? pred)
-               (set-focus! pred)]
+               (set-focus! (rb:successor focus) 0)]
               [else
-               (set-focus! (rb:successor focus))])
+               (set-focus! pred (- focus-pos (node-self-width pred)))])
         (rb:delete! rb node-to-delete)))
       
 
@@ -181,8 +193,8 @@
            (define first-token (rb:tree-first rb))
            (rb:delete! rb first-token)
            (define right-tree (rb->token-tree rb))
-           (send right-tree set-focus! (rb:tree-first rb))
-           (set-focus! rb:nil)
+           (send right-tree set-focus! (rb:tree-first rb) 0)
+           (set-focus! rb:nil 0)
            (values 0 
                    (rb:node-self-width first-token)
                    (new token-tree%)
@@ -197,8 +209,8 @@
 
            (rb:delete! rb last-token)
            (define left-tree (rb->token-tree rb))
-           (send left-tree set-focus! (rb:tree-last rb))
-           (set-focus! rb:nil)
+           (send left-tree set-focus! (rb:tree-last rb) (last-pos rb))
+           (set-focus! rb:nil 0)
            (values (- total-width (rb:node-self-width last-token))
                    total-width
                    left-tree 
@@ -223,8 +235,8 @@
              (define-values (left-tree right-tree)
                (values (rb->token-tree left)
                        (rb->token-tree right)))
-             (send left-tree set-focus! (rb:tree-last left))
-             (send right-tree set-focus! (rb:tree-first right))
+             (send left-tree set-focus! (rb:tree-last left) (last-pos left))
+             (send right-tree set-focus! (rb:tree-first right) 0)
              (values (- pos (rb:node-self-width left-last))
                      (+ pos (rb:node-self-width pivot-node))
                      left-tree
@@ -236,12 +248,12 @@
              (define start-pos (- pos residue))
              (define end-pos (+ start-pos (rb:node-self-width pivot-node)))
              (define-values (left right) (rb:split! rb pivot-node))
-             (set-focus! rb:nil)
+             (set-focus! rb:nil 0)
              (define-values (left-tree right-tree)
                (values (rb->token-tree left)
                        (rb->token-tree right)))
-             (send left-tree set-focus! (rb:tree-last left))
-             (send right-tree set-focus! (rb:tree-first right))
+             (send left-tree set-focus! (rb:tree-last left) (last-pos left))
+             (send right-tree set-focus! (rb:tree-first right) 0)
              (values start-pos end-pos 
                      left-tree
                      right-tree
@@ -272,11 +284,11 @@
         [else
          (define-values (left right) (rb:split! rb focus))
          (rb:insert-last! left focus)
-         (set-focus! rb:nil)
+         (set-focus! rb:nil 0)
          (define-values (left-tree right-tree)
            (values (rb->token-tree left) (rb->token-tree right)))
-         (send left-tree set-focus! (rb:tree-last left))
-         (send right-tree set-focus! (rb:tree-first right))
+         (send left-tree set-focus! (rb:tree-last left) (last-pos left))
+         (send right-tree set-focus! (rb:tree-first right) 0)
          (values left-tree right-tree)]))
         
 
@@ -296,11 +308,11 @@
         [else
          (define-values (left right) (rb:split! rb focus))
          (rb:insert-first! right focus)
-         (set-focus! rb:nil)
+         (set-focus! rb:nil 0)
          (define-values (left-tree right-tree)
            (values (rb->token-tree left) (rb->token-tree right)))
-         (send left-tree set-focus! (rb:tree-last left))
-         (send right-tree set-focus! (rb:tree-first right))
+         (send left-tree set-focus! (rb:tree-last left) (last-pos left))
+         (send right-tree set-focus! (rb:tree-first right) 0)
          (values left-tree right-tree)]))
 
 
@@ -349,7 +361,7 @@
     (values (send tree1 get-rb) (send tree2 get-rb)))
   (define rb-joined (rb:join! rb2 rb1))
   (send tree1 set-rb! rb-joined)
-  (send tree1 set-focus! (rb:tree-root rb-joined))
+  (send tree1 set-focus! (rb:tree-root rb-joined) (node-left-subtree-length (rb:tree-root rb-joined)))
   (send tree2 reset-tree))
 
 
@@ -368,7 +380,7 @@
     (values (send tree1 get-rb) (send tree2 get-rb)))
   (define rb-joined (rb:join! rb1 rb2))
   (send tree1 set-rb! rb-joined)
-  (send tree1 set-focus! (rb:tree-root rb-joined))
+  (send tree1 set-focus! (rb:tree-root rb-joined) (node-left-subtree-length (rb:tree-root rb-joined)))
   (send tree2 reset-tree))
 
 
@@ -381,8 +393,11 @@
 (define (insert-last-spec! tree length data)
   ;; TODO: add unit test that makes sure insert-last-spec! works.  It's missing
   ;; from the test suite.
-  (rb:insert-last/data! (send tree get-rb) data length)
-  (send tree set-focus! (rb:tree-root (send tree get-rb))))
+  (define the-rb (send tree get-rb))
+  (rb:insert-last/data! the-rb data length)
+  (send tree set-focus!
+        (rb:tree-root the-rb) 
+        (node-left-subtree-length (rb:tree-root the-rb))))
 
 
 ;; insert-first-spec!: tree natural any -> void
@@ -390,9 +405,11 @@
 (define (insert-first-spec! tree length data)
   ;; TODO: add unit test that makes sure insert-last-spec! works.  It's missing
   ;; from the test suite.
-  (rb:insert-first/data! (send tree get-rb) data length)
-  (send tree set-focus! (rb:tree-root (send tree get-rb))))
-
+  (define the-rb (send tree get-rb))
+  (rb:insert-first/data! the-rb data length)
+  (send tree set-focus! 
+        (rb:tree-root the-rb)
+        (node-left-subtree-length (rb:tree-root the-rb))))
 
 
 
