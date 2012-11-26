@@ -424,7 +424,6 @@ added get-regions
       (let loop ([pos pos][valid-tree valid-tree][old-invalid-tree #f])
         (let-values (((orig-token-start orig-token-end valid-tree invalid-tree orig-data)
                       (send valid-tree split/data (- pos (lexer-state-start-pos ls)))))
-          (printf "split-backward: ~s ~s ~s\n" orig-token-start orig-token-end orig-data)
           (let ([backup-pos (- pos (data-backup-delta orig-data))]
                 [invalid-tree (or old-invalid-tree invalid-tree)])
             (if (backup-pos . < . pos)
