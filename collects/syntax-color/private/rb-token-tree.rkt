@@ -122,10 +122,8 @@
       (unless (rb:nil-node? focus)
         (cond
          [(<= key-position 0)
-          (printf "HERE!!!\n")
           (set-focus! (rb:tree-first rb))]
          [(>= key-position (rb:node-subtree-width (rb:tree-root rb)))
-          (printf "HERE!!!\n")
           (set-focus! (rb:tree-last rb))]
          [else
           (set-focus! (rb:search rb key-position))])))
@@ -197,7 +195,7 @@
            (rb:delete! rb last-token)
            (define left-tree (rb->token-tree rb))
            (set! focus rb:nil)
-           (values (- (rb:node-self-width last-token) pos) pos
+           (values (- pos (rb:node-self-width last-token)) pos
                    left-tree (new token-tree%) 
                    (rb:node-data last-token))]
 
