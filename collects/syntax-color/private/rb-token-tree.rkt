@@ -117,9 +117,19 @@
         (rb:update-node-self-width! focus (+ (rb:node-self-width focus) inc))))
 
     (define/public (search! key-position)
+      ;; TODO: add unit test that makes sure search works.  If there is no
+      ;; token, the original just jumps to a node.  We do not.
       (unless (rb:nil-node? focus)
-        (set-focus! (rb:search rb key-position))))
-
+        (cond
+         [(<= key-position 0)
+          (printf "HERE!!!\n")
+          (set-focus! (rb:tree-first rb))]
+         [(>= key-position (rb:node-subtree-width (rb:tree-root rb)))
+          (printf "HERE!!!\n")
+          (set-focus! (rb:tree-last rb))]
+         [else
+          (set-focus! (rb:search rb key-position))])))
+         
     (define/public (search-max!)
       (unless (rb:nil-node? focus)
         (set-focus! (rb:tree-last rb))))
@@ -336,6 +346,8 @@
 ;; I'm not exactly sure if the behavior of where the tree is focused
 ;; is something defined.
 (define (insert-last-spec! tree length data)
+  ;; TODO: add unit test that makes sure insert-last-spec! works.  It's missing
+  ;; from the test suite.
   (printf "insert-last-spec!\n")
   (rb:insert-last/data! (send tree get-rb) data length)
   (send tree set-focus! (rb:tree-root (send tree get-rb))))
