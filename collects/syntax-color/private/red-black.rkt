@@ -591,6 +591,7 @@
                    (set-node-left! z nil)
                    (set-node-right! z nil)
                    (set-node-color! z red)
+                   (set-node-subtree-width! z (node-self-width z))
 
                    (values x y-original-color nil-parent)]
                   
@@ -605,6 +606,7 @@
                    (set-node-left! z nil)
                    (set-node-right! z nil)
                    (set-node-color! z red)
+                   (set-node-subtree-width! z (node-self-width z))
                    (values x y-original-color nil-parent)]
                   
                   ;; The hardest case is when z has non-nil left and right.
@@ -653,7 +655,8 @@
                      (set-node-left! z nil)
                      (set-node-right! z nil)
                      (set-node-color! z red)
- 
+                     (set-node-subtree-width! z (node-self-width z)) 
+
                      (values x y-original-color nil-parent))])])
     (cond [(eq? black y-original-color)
            (fix-after-delete! a-tree x nil-parent)]
@@ -1042,6 +1045,7 @@
   (set-node-right! x nil)
   (set-node-left! x nil)
   (set-node-color! x red)
+  (set-node-subtree-width! x (node-self-width x))
 
   ;; Clear out a-tree so it's unusable.
   (reset! a-tree)
@@ -1323,6 +1327,13 @@
            racket/list
            racket/class
            racket/promise)
+
+  (define (singleton-node? n)
+    (and (node? n)
+         (red? n)
+         (nil? (node-parent n))
+         (= (node-subtree-width n)
+            (node-self-width n))))
   
   
   ;; tree-items: tree -> (listof (list X number))
@@ -2442,6 +2453,7 @@
             ;; Delete a random word if we can.
             (define k (random (length known-model)))
             (delete-kth! k)))
+
         
         (define/public (insert-before/random!)
           (when (not (empty? known-model))
