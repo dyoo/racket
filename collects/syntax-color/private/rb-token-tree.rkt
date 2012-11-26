@@ -11,7 +11,7 @@
 ;;     empty trees.
 
 ;; For speed, we use the uncontracted forms in red-black.rkt.
-(require (prefix-in rb: (submod "red-black.rkt" uncontracted))
+(require (prefix-in rb: "red-black.rkt" #;(submod "red-black.rkt" uncontracted))
          racket/class)
 
 
@@ -245,6 +245,11 @@
     ;; splits the tree into 2 trees, setting root to #f
     ;; returns a tree including the focus and its predecessors
     ;; then the focus's successors
+    ;;
+    ;; The left tree's focus is defined to be at its last,
+    ;; and the right tree's focus is defined to be at its first.
+    ;;
+    ;; FIXME: add test case checking semantics of focus after a split-after.
     (define/public (split-after)
       (cond
         [(rb:nil-node? focus)
@@ -253,13 +258,22 @@
          (define-values (left right) (rb:split! rb focus))
          (rb:insert-last! left focus)
          (set! focus rb:nil)
-         (values (rb->token-tree left) (rb->token-tree right))]))
+         (define-values (left-tree right-tree)
+           (values (rb->token-tree left) (rb->token-tree right)))
+         (send left-tree set-focus! (rb:tree-last left))
+         (send right-tree set-focus! (rb:tree-first left))
+         (values left-tree right-tree)]))
         
 
     ;; split-before: -> token-tree% * token-tree%
     ;; splits the tree into 2 trees, setting root to #f
     ;; returns the focus's predecessors, and then a tree including the focus
     ;; and its successors.
+    ;;
+    ;; The left tree's focus is defined to be at its last,
+    ;; and the right tree's focus is defined to be at its first.
+    ;;
+    ;; FIXME: add test case checking semantics of focus after a split-before.
     (define/public (split-before)
       (cond
         [(rb:nil-node? focus)
@@ -268,7 +282,11 @@
          (define-values (left right) (rb:split! rb focus))
          (rb:insert-first! right focus)
          (set! focus rb:nil)
-         (values (rb->token-tree left) (rb->token-tree right))]))
+         (define-values (left-tree right-tree)
+           (values (rb->token-tree left) (rb->token-tree right)))
+         (send left-tree set-focus! (rb:tree-last left))
+         (send right-tree set-focus! (rb:tree-first left))
+         (values left-tree right-tree)]))
 
 
     (define/public (to-list)
