@@ -55,7 +55,7 @@
       (send t set-rb! an-rb)
       (send t set-focus!
             (rb:tree-first an-rb) 
-            (if (rb:nil? (rb:tree-root an-rb)) -1 0))
+            (if (rb:nil-node? (rb:tree-root an-rb)) -1 0))
       t)
 
 
@@ -72,7 +72,7 @@
       (set! focus-pos new-pos)
 
       (unless (= (rb:position focus) focus-pos)
-        (error 'mismatch2)))
+        (error 'mismatch2 "expected ~a, got ~a" (rb:position focus) focus-pos)))
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -107,8 +107,6 @@
          (rb:node-data focus)]))
 
     (define/public (get-root-start-position)
-      (unless (= (rb:position focus) focus-pos)
-        (error 'mismatch))
       (cond
         [(rb:nil-node? focus)
          0]
@@ -117,8 +115,6 @@
          #;focus-pos]))
 
     (define/public (get-root-end-position)
-      (unless (= (rb:position focus) focus-pos)
-        (error 'mismatch))
       (cond
         [(rb:nil-node? focus)
          0]
@@ -149,15 +145,20 @@
     ;; Returns the starting position of the last element in rb.
     (define (last-pos rb)
       (cond
-       [(rb:nil? (rb:tree-root rb))
+       [(rb:nil-node? (rb:tree-root rb))
         -1]
        [else
-        (- (rb:node-subtree-width (rb:tree-root rb) )
-           (rb:node-self-width (rb:tree-last rb)))]))
+        (define pos (- (rb:node-subtree-width (rb:tree-root rb))
+                       (rb:node-self-width (rb:tree-last rb))))
+        
+        (unless (= pos (rb:position (rb:tree-last rb)))
+          (printf "~s\n" rb)
+          (error 'huh? "computed ~s, but should have gotten ~s" pos (rb:position (rb:tree-last rb))))
+        pos]))
 
     (define (first-pos rb)
       (cond
-       [(rb:nil? (rb:tree-root rb))
+       [(rb:nil-node? (rb:tree-root rb))
         -1]
        [else
         0]))
@@ -177,7 +178,7 @@
         (define pred (rb:predecessor focus))
         (cond [(rb:nil-node? pred)
                (define succ (rb:successor focus))
-               (set-focus! succ (if (rb:nil? succ) -1 0))]
+               (set-focus! succ (if (rb:nil-node? succ) -1 0))]
               [else
                (set-focus! pred (- focus-pos (rb:node-self-width pred)))])
         (rb:delete! rb node-to-delete)))
@@ -311,11 +312,14 @@
         [else
          (define-values (left right) (rb:split! rb focus))
          (rb:insert-last! left focus)
+         (displayln 1)
          (set-focus! rb:nil -1)
          (define-values (left-tree right-tree)
            (values (rb->token-tree left) (rb->token-tree right)))
-         (send left-tree set-focus! (rb:tree-last left) (last-pos left))
+         (displayln 3)
          (send right-tree set-focus! (rb:tree-first right) (first-pos right))
+         (displayln 2)
+         (send left-tree set-focus! (rb:tree-last left) (last-pos left))
          (values left-tree right-tree)]))
         
 

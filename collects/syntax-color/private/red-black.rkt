@@ -126,7 +126,7 @@
               first ;; node     optimization: Points to the first element.
               last  ;; node     optimization: Points to the last element.
               bh)   ;; natural  optimization: The black height of the entire tree.
-  #:mutable)
+  #:mutable #:transparent)
 
 
 (struct node (data          ;; Any
@@ -136,7 +136,7 @@
               left       ;; node
               right      ;; node
               color)     ;; (U red black)
-  #:mutable)
+  #:mutable #:transparent)
 
 
 ;; As in CLRS, we use a single nil sentinel node that represents nil.
@@ -309,6 +309,16 @@
       [else
        (update-node-subtree-width! n)
        (loop (node-parent n))])))
+
+
+
+;; update-node-self-width!: node exact-nonnegative-integer -> void Updates
+;; the node's self width, and propagates that change up the tree.
+;; Internal note: do not confuse this with the similarly-named
+;; update-node-subtree-width, which does something different.
+(define (update-node-self-width! n w)
+  (set-node-self-width! n w)
+  (update-subtree-width-up-to-root! n))
 
 
 
@@ -1104,14 +1114,6 @@
 
 
 
-;; update-node-self-width!: node exact-nonnegative-integer -> void Updates
-;; the node's self width, and propagates that change up the tree.
-;; Internal note: do not confuse this with the similarly-named
-;; update-node-subtree-width, which does something different.
-(define (update-node-self-width! n w)
-  (set-node-self-width! n w)
-  (update-subtree-width-up-to-root! n))
-
 
 ;; force-tree-first!: tree -> void
 ;; INTERNAL
@@ -1716,7 +1718,19 @@
       (delete! t (search t 1))
       (check-rb-structure! t)
       (delete! t (search t 0))
+      (check-rb-structure! t))
+
+     
+     (test-case
+      "does deletion get subtree width right?"
+      (define t (new-tree))
+      (insert-last/data! t "hello" 5)
+      (insert-last/data! t "dyoo" 4)
+      (define r (tree-root t))
+      (delete! t r)
+      (insert-last! t r)
       (check-rb-structure! t))))
+      
   
   
   
