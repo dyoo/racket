@@ -126,7 +126,7 @@
               first ;; node     optimization: Points to the first element.
               last  ;; node     optimization: Points to the last element.
               bh)   ;; natural  optimization: The black height of the entire tree.
-  #:mutable #:transparent)
+  #:mutable)
 
 
 (struct node (data          ;; Any
@@ -136,7 +136,7 @@
               left       ;; node
               right      ;; node
               color)     ;; (U red black)
-  #:mutable #:transparent)
+  #:mutable)
 
 
 ;; As in CLRS, we use a single nil sentinel node that represents nil.

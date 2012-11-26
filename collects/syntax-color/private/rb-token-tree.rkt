@@ -69,10 +69,7 @@
 
     (define/public (set-focus! new-focus new-pos) 
       (set! focus new-focus)
-      (set! focus-pos new-pos)
-
-      (unless (= (rb:position focus) focus-pos)
-        (error 'mismatch2 "expected ~a, got ~a" (rb:position focus) focus-pos)))
+      (set! focus-pos new-pos))
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -111,15 +108,14 @@
         [(rb:nil-node? focus)
          0]
         [else
-         (rb:position focus)
-         #;focus-pos]))
+         focus-pos]))
 
     (define/public (get-root-end-position)
       (cond
         [(rb:nil-node? focus)
          0]
         [else
-         (+ (rb:position focus) #;focus-pos (rb:node-self-width focus))]))
+         (+ focus-pos (rb:node-self-width focus))]))
  
     (define/public (add-to-root-length inc)
       (unless (rb:nil-node? focus)
@@ -137,8 +133,20 @@
           (set-focus! (rb:tree-last rb)
                       (last-pos rb))]
          [else
-          (define-values (found-node residue) (rb:search/residual rb key-position))
-          (set-focus! found-node (- key-position residue))])))
+          (cond
+           ;; optimization: are we already where we're searching?
+           [(= focus-pos key-position)
+            (void)]
+           ;; optimization: are we searching for the immediate successor?
+           [(= key-position (+ focus-pos (rb:node-self-width focus)))
+            (define succ (rb:successor focus))
+            (cond [(rb:nil-node? succ)
+                   (void)]
+                  [else
+                   (set-focus! succ key-position)])]
+           [else
+            (define-values (found-node residue) (rb:search/residual rb key-position))
+            (set-focus! found-node (- key-position residue))])])))
     
 
     ;; last-pos: rb:tree -> natural
@@ -150,10 +158,6 @@
        [else
         (define pos (- (rb:node-subtree-width (rb:tree-root rb))
                        (rb:node-self-width (rb:tree-last rb))))
-        
-        (unless (= pos (rb:position (rb:tree-last rb)))
-          (printf "~s\n" rb)
-          (error 'huh? "computed ~s, but should have gotten ~s" pos (rb:position (rb:tree-last rb))))
         pos]))
 
     (define (first-pos rb)
@@ -312,13 +316,10 @@
         [else
          (define-values (left right) (rb:split! rb focus))
          (rb:insert-last! left focus)
-         (displayln 1)
          (set-focus! rb:nil -1)
          (define-values (left-tree right-tree)
            (values (rb->token-tree left) (rb->token-tree right)))
-         (displayln 3)
          (send right-tree set-focus! (rb:tree-first right) (first-pos right))
-         (displayln 2)
          (send left-tree set-focus! (rb:tree-last left) (last-pos left))
          (values left-tree right-tree)]))
         
