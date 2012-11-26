@@ -115,7 +115,6 @@
         (rb:update-node-self-width! focus (+ (rb:node-self-width focus) inc))))
 
     (define/public (search! key-position)
-      (printf "search!\n")
       ;; TODO: add unit test that makes sure search works.  If there is no
       ;; token, the original just jumps to the closest node.
       (unless (rb:nil-node? focus)
