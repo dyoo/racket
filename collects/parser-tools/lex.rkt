@@ -1,16 +1,18 @@
-(module lex mzscheme
+(module lex racket/base
 
   ;; Provides the syntax used to create lexers and the functions needed to
   ;; create and use the buffer that the lexer reads from.  See docs.
 
-  (require-for-syntax mzlib/list
-                      syntax/stx
-                      syntax/define
-                      syntax/boundmap
-                      "private-lex/util.rkt"
-                      "private-lex/actions.rkt"
-                      "private-lex/front.rkt"
-                      "private-lex/unicode-chars.rkt")
+  (require (for-syntax racket/base
+                       mzlib/list
+                       syntax/stx
+                       syntax/define
+                       syntax/boundmap
+                       racket/promise
+                       "private-lex/util.rkt"
+                       "private-lex/actions.rkt"
+                       "private-lex/front.rkt"
+                       "private-lex/unicode-chars.rkt"))
 
   (require mzlib/stxparam
            syntax/readerr
@@ -20,8 +22,8 @@
            
            ;; Dealing with tokens and related structures 
            define-tokens define-empty-tokens token-name token-value token?
-           (struct position (offset line col))
-           (struct position-token (token start-pos end-pos))
+           (struct-out position)
+           (struct-out position-token)
            
            ;; File path for highlighting errors while lexing
            file-path
@@ -86,7 +88,7 @@
                                  ids)))
                         (_ #t)))
                     spec/re-act-lst))
-		  (name-lst (map (lambda (x) (datum->syntax-object #f (gensym))) re-act-lst))
+		  (name-lst (map (lambda (x) (datum->syntax #f (gensym))) re-act-lst))
 		  (act-lst (map (lambda (x) (stx-car (stx-cdr x))) re-act-lst))
 		  (re-actname-lst (map (lambda (re-act name)
 					 (list (stx-car re-act)
@@ -347,7 +349,7 @@
                                               (force blank-ranges)
                                               (force iso-control-ranges))))
                      ((names ...) (map (lambda (sym)
-                                         (datum->syntax-object (syntax ctxt) sym #f))
+                                         (datum->syntax (syntax ctxt) sym #f))
                                        '(alphabetic
                                          lower-case
                                          upper-case
