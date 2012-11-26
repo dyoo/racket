@@ -160,6 +160,8 @@
     ;; token and the stop will be for the second.
     ;;
     ;; The last value is the data at the searched position.
+    ;;
+    ;; The two tree's foci will be at the edges adjacent to where the split occurred.
     (define/public (split/data pos)
       (cond
         [(rb:nil-node? focus)
@@ -178,6 +180,7 @@
            (define first-token (rb:tree-first rb))
            (rb:delete! rb first-token)
            (define right-tree (rb->token-tree rb))
+           (send right-tree set-focus! (rb:tree-first rb))
            (set! focus rb:nil)
            (values 0 
                    (rb:node-self-width first-token)
@@ -193,6 +196,7 @@
 
            (rb:delete! rb last-token)
            (define left-tree (rb->token-tree rb))
+           (send left-tree set-focus! (rb:tree-last rb))
            (set! focus rb:nil)
            (values (- total-width (rb:node-self-width last-token))
                    total-width
@@ -215,10 +219,15 @@
              (define left-last (rb:tree-last left))
              (rb:delete! left left-last)
              (set! focus rb:nil)
+             (define-values (left-tree right-tree)
+               (values (rb->token-tree left)
+                       (rb->token-tree right)))
+             (send left-tree set-focus! (rb:tree-last left))
+             (send right-tree set-focus! (rb:tree-first right))
              (values (- pos (rb:node-self-width left-last))
                      (+ pos (rb:node-self-width pivot-node))
-                     (rb->token-tree left)
-                     (rb->token-tree right)
+                     left-tree
+                     right-tree
                      (rb:node-data pivot-node))]
 
             [else
@@ -227,9 +236,14 @@
              (define end-pos (+ start-pos (rb:node-self-width pivot-node)))
              (define-values (left right) (rb:split! rb pivot-node))
              (set! focus rb:nil)
+             (define-values (left-tree right-tree)
+               (values (rb->token-tree left)
+                       (rb->token-tree right)))
+             (send left-tree set-focus! (rb:tree-last left))
+             (send right-tree set-focus! (rb:tree-first right))
              (values start-pos end-pos 
-                     (rb->token-tree left)
-                     (rb->token-tree right)
+                     left-tree
+                     right-tree
                      (rb:node-data pivot-node))])])]))
     
 
