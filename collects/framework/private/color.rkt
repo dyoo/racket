@@ -349,11 +349,9 @@ added get-regions
               ;; version.  In other words, the new greatly outweighs the tree
               ;; operations.
               ;;(insert-last! tokens (new token-tree% (length len) (data type)))
-              (printf "in current-retokenize ~a\n" (eq-hash-code (lexer-state-tokens ls)))
               (time-acc 
                (insert-last-spec! (lexer-state-tokens ls) len (make-data type new-lexer-mode backup-delta)))
-              (printf "after last spec ~a\n" (eq-hash-code (lexer-state-tokens ls)))
-              (show-tree (lexer-state-tokens ls))
+              #;(show-tree (lexer-state-tokens ls))
               (send (lexer-state-parens ls) add-token data len)
               (cond
                 [(and (not (send (lexer-state-invalid-tokens ls) is-empty?))
@@ -365,7 +363,6 @@ added get-regions
                   (send (lexer-state-invalid-tokens ls) search-max!)
                   (send (lexer-state-parens ls) merge-tree
                         (send (lexer-state-invalid-tokens ls) get-root-end-position))
-                  (printf "insert last\n")
                   (insert-last! (lexer-state-tokens ls)
                                 (lexer-state-invalid-tokens ls))
                   (set-lexer-state-invalid-tokens-start! ls +inf.0)
@@ -413,8 +410,6 @@ added get-regions
     (define/private (show-tree t)
       (printf "Tree:\n")
 
-      (printf "the tree thinks before that: ~s\n" (send t to-list))
-
       (send t search-min!)
       (let loop ([old-s -inf.0])
         (let ([s (send t get-root-start-position)]
@@ -422,9 +417,8 @@ added get-regions
           (unless (= s old-s)
             (printf " ~s\n" (list s e))
             (send t search! e)
-            (loop s))))
+            (loop s)))))
 
-      (printf "the tree thinks: ~s\n" (send t to-list)))
     
     (define/private (split-backward ls valid-tree pos)
       (let loop ([pos pos][valid-tree valid-tree][old-invalid-tree #f])

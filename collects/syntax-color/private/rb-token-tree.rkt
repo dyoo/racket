@@ -115,8 +115,9 @@
         (rb:update-node-self-width! focus (+ (rb:node-self-width focus) inc))))
 
     (define/public (search! key-position)
+      (printf "search!\n")
       ;; TODO: add unit test that makes sure search works.  If there is no
-      ;; token, the original just jumps to a node.  We do not.
+      ;; token, the original just jumps to the closest node.
       (unless (rb:nil-node? focus)
         (cond
          [(<= key-position 0)
@@ -173,37 +174,38 @@
 
           ;; Case 1.
           ;; At the start-edge of the first token?
-          [(= pos 0)
+          [(<= pos 0)
            ;; If so, just delete the first token.
            (define first-token (rb:tree-first rb))
            (rb:delete! rb first-token)
            (define right-tree (rb->token-tree rb))
            (set! focus rb:nil)
-           (values 0 (rb:node-self-width first-token)
-                   (new token-tree%) right-tree 
+           (values 0 
+                   (rb:node-self-width first-token)
+                   (new token-tree%)
+                   right-tree 
                    (rb:node-data first-token))]
 
           ;; Case 2.
           ;; At the end-edge of the last token?
-          [(= pos (rb:node-subtree-width (rb:tree-root rb)))
+          [(>= pos (rb:node-subtree-width (rb:tree-root rb)))
            ;; Symmetric case.
            (define last-token (rb:tree-last rb))
            (rb:delete! rb last-token)
            (define left-tree (rb->token-tree rb))
            (set! focus rb:nil)
-           (values (- pos (rb:node-self-width last-token)) pos
-                   left-tree (new token-tree%) 
+           (values (- (rb:node-subtree-width (rb:tree-root rb))
+                      (rb:node-self-width last-token))
+                   (rb:node-subtree-width (rb:tree-root rb))
+                   left-tree 
+                   (new token-tree%) 
                    (rb:node-data last-token))]
 
           [else
-           ;; Otherwise, pos is either outside or somewhere inside the
-           ;; range.
+           ;; Otherwise, pos is somewhere inside the range, and we're
+           ;; guaranteed to find the pivot somewhere.
            (define-values (pivot-node residue) (rb:search/residual rb pos))
            (cond
-            ;; If we're outside, just return the nil case:
-            [(rb:nil-node? pivot-node)
-             (values 0 0 (new token-tree%) (new token-tree%) #f)]
-
             ;; If the residue after searching is zero, then we're right
             ;; on the boundary between two tokens, and must delete both.
             [(= residue 0)
@@ -238,7 +240,12 @@
         (split/data pos))
       (values start-pos end-pos left-tree right-tree))
 
-   
+
+
+    ;; split-after: -> token-tree% * token-tree%
+    ;; splits the tree into 2 trees, setting root to #f
+    ;; returns a tree including the focus and its predecessors
+    ;; then the focus's successors
     (define/public (split-after)
       (cond
         [(rb:nil-node? focus)
@@ -250,6 +257,10 @@
          (values (rb->token-tree left) (rb->token-tree right))]))
         
 
+    ;; split-before: -> token-tree% * token-tree%
+    ;; splits the tree into 2 trees, setting root to #f
+    ;; returns the focus's predecessors, and then a tree including the focus
+    ;; and its successors.
     (define/public (split-before)
       (cond
         [(rb:nil-node? focus)
