@@ -189,14 +189,14 @@
           ;; Case 2.
           ;; At the end-edge of the last token?
           [(>= pos (rb:node-subtree-width (rb:tree-root rb)))
-           ;; Symmetric case.
+           (define total-width (rb:node-subtree-width (rb:tree-root rb)))
            (define last-token (rb:tree-last rb))
+
            (rb:delete! rb last-token)
            (define left-tree (rb->token-tree rb))
            (set! focus rb:nil)
-           (values (- (rb:node-subtree-width (rb:tree-root rb))
-                      (rb:node-self-width last-token))
-                   (rb:node-subtree-width (rb:tree-root rb))
+           (values (- total-width (rb:node-self-width last-token))
+                   total-width
                    left-tree 
                    (new token-tree%) 
                    (rb:node-data last-token))]
