@@ -80,9 +80,9 @@
              (let-values (((first next) (send tree split-after)))
                (let ((first-end (send first get-root-end-position)))
                  (send first add-to-root-length (- pos first-end))
-                 (insert-first! next (new token-tree%
-                                          (length (- first-end pos))
-                                          (data (build-paren #f 0))))
+                 (insert-first-spec! next
+                                     (- first-end pos)
+                                     (build-paren #f 0))
                  (values first next)))))))
       
       ;; split-tree: natural-number -> void

@@ -11,7 +11,7 @@
 ;;     empty trees.
 
 ;; For speed, we use the uncontracted forms in red-black.rkt.
-(require (prefix-in rb: "red-black.rkt" #;(submod "red-black.rkt" uncontracted))
+(require (prefix-in rb: (submod "red-black.rkt" uncontracted))
          racket/class)
 
 
@@ -19,6 +19,7 @@
          insert-first! 
          insert-last!
          insert-last-spec!
+         insert-first-spec!
          node? node-token-length node-token-data 
          node-left-subtree-length node-left node-right)
 
@@ -382,6 +383,16 @@
   ;; from the test suite.
   (rb:insert-last/data! (send tree get-rb) data length)
   (send tree set-focus! (rb:tree-root (send tree get-rb))))
+
+
+;; insert-first-spec!: tree natural any -> void
+;; Inserts content at the beginning of the tree.
+(define (insert-first-spec! tree length data)
+  ;; TODO: add unit test that makes sure insert-last-spec! works.  It's missing
+  ;; from the test suite.
+  (rb:insert-first/data! (send tree get-rb) data length)
+  (send tree set-focus! (rb:tree-root (send tree get-rb))))
+
 
 
 
