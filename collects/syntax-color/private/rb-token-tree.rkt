@@ -41,7 +41,7 @@
     (define focus rb:nil)      ;; focus is an instance of rb:node.
     (when length
       (rb:insert-last/data! rb data length)
-      (set! focus (rb:tree-root rb)))
+      (set-focus! (rb:tree-root rb)))
     (super-new)
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -74,7 +74,7 @@
     ;; Empty the contents of the tree.
     (define/public (reset-tree)
       (rb:reset! rb)
-      (set! focus rb:nil))
+      (set-focus! rb:nil))
 
     (define/public (get-root)
       (nil->false focus))
@@ -181,7 +181,7 @@
            (rb:delete! rb first-token)
            (define right-tree (rb->token-tree rb))
            (send right-tree set-focus! (rb:tree-first rb))
-           (set! focus rb:nil)
+           (set-focus! rb:nil)
            (values 0 
                    (rb:node-self-width first-token)
                    (new token-tree%)
@@ -197,7 +197,7 @@
            (rb:delete! rb last-token)
            (define left-tree (rb->token-tree rb))
            (send left-tree set-focus! (rb:tree-last rb))
-           (set! focus rb:nil)
+           (set-focus! rb:nil)
            (values (- total-width (rb:node-self-width last-token))
                    total-width
                    left-tree 
@@ -235,7 +235,7 @@
              (define start-pos (- pos residue))
              (define end-pos (+ start-pos (rb:node-self-width pivot-node)))
              (define-values (left right) (rb:split! rb pivot-node))
-             (set! focus rb:nil)
+             (set-focus! rb:nil)
              (define-values (left-tree right-tree)
                (values (rb->token-tree left)
                        (rb->token-tree right)))
@@ -271,11 +271,11 @@
         [else
          (define-values (left right) (rb:split! rb focus))
          (rb:insert-last! left focus)
-         (set! focus rb:nil)
+         (set-focus! rb:nil)
          (define-values (left-tree right-tree)
            (values (rb->token-tree left) (rb->token-tree right)))
          (send left-tree set-focus! (rb:tree-last left))
-         (send right-tree set-focus! (rb:tree-first left))
+         (send right-tree set-focus! (rb:tree-first right))
          (values left-tree right-tree)]))
         
 
@@ -295,11 +295,11 @@
         [else
          (define-values (left right) (rb:split! rb focus))
          (rb:insert-first! right focus)
-         (set! focus rb:nil)
+         (set-focus! rb:nil)
          (define-values (left-tree right-tree)
            (values (rb->token-tree left) (rb->token-tree right)))
          (send left-tree set-focus! (rb:tree-last left))
-         (send right-tree set-focus! (rb:tree-first left))
+         (send right-tree set-focus! (rb:tree-first right))
          (values left-tree right-tree)]))
 
 
