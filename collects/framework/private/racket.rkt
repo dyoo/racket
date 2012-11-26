@@ -1308,10 +1308,10 @@
          [beg-reg (cadr pref)]
          [def-reg (caddr pref)]
          [lam-reg (cadddr pref)])
+    ;; fast path:
     (hash-ref
      ht
-     (with-handlers ((exn:fail:read? (λ (x) #f)))
-       (read (open-input-string text)))
+     (string->symbol text)
      (λ () 
        (cond
          [(and beg-reg (regexp-match beg-reg text)) 'begin]
