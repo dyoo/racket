@@ -73,6 +73,7 @@
     ;; reset-tree: -> void
     ;; Empty the contents of the tree.
     (define/public (reset-tree)
+      (printf "reset-tree\n")
       (rb:reset! rb)
       (set! focus rb:nil))
 
@@ -111,6 +112,7 @@
          (+ (rb:position focus) (rb:node-self-width focus))]))
  
     (define/public (add-to-root-length inc)
+      (printf "add-to-root-length\n")
       (unless (rb:nil-node? focus)
         (rb:update-node-self-width! focus (+ (rb:node-self-width focus) inc))))
 
@@ -127,6 +129,7 @@
         (set-focus! (rb:tree-first rb))))
 
     (define/public (remove-root!)
+      (printf "remove-root\n")
       (unless (rb:nil-node? focus)
         (define node-to-delete focus)
         (define pred (rb:predecessor focus))
@@ -153,6 +156,7 @@
     ;;
     ;; The last value is the data at the searched position.
     (define/public (split/data pos)
+      (printf "split/data\n")
       (cond
         [(rb:nil-node? focus)
          (values 0 0 (new token-tree%) (new token-tree%) #f)]
@@ -232,6 +236,7 @@
 
    
     (define/public (split-after)
+      (printf "split-after\n")
       (cond
         [(rb:nil-node? focus)
          (values (new token-tree%) (new token-tree%))]
@@ -243,6 +248,7 @@
         
 
     (define/public (split-before)
+      (printf "split-before\n")
       (cond
         [(rb:nil-node? focus)
          (values (new token-tree%) (new token-tree%))]
@@ -294,6 +300,7 @@
 ;; I'm not exactly sure if the behavior of where the tree is focused
 ;; is something defined.
 (define (insert-first! tree1 tree2)
+  (printf "insert-first!\n")
   (define-values (rb1 rb2)
     (values (send tree1 get-rb) (send tree2 get-rb)))
   (define rb-joined (rb:join! rb2 rb1))
@@ -313,6 +320,7 @@
 ;; I'm not exactly sure if the behavior of where the tree is focused
 ;; is something defined.
 (define (insert-last! tree1 tree2)
+  (printf "insert-last!\n")
   (define-values (rb1 rb2)
     (values (send tree1 get-rb) (send tree2 get-rb)))
   (define rb-joined (rb:join! rb1 rb2))
@@ -324,9 +332,13 @@
 
 ;; insert-last-spec!: tree natural any -> void
 ;; Inserts content at the end of the tree.
+;;
+;; I'm not exactly sure if the behavior of where the tree is focused
+;; is something defined.
 (define (insert-last-spec! tree length data)
-  (rb:insert-last/data! (send tree get-rb) data length))
-
+  (printf "insert-last-spec!\n")
+  (rb:insert-last/data! (send tree get-rb) data length)
+  (send tree set-focus! (rb:tree-root (send tree get-rb))))
 
 
 
