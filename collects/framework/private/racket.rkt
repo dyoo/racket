@@ -5,6 +5,7 @@
 
 (require string-constants
          racket/class
+         racket/promise
          mred/mred-sig
          syntax-color/module-lexer
          profile
@@ -907,14 +908,30 @@
         (set-position pos pos)))
     
     (define/public (stick-to-next-sexp? start-pos)
-      (let ([end-pos (forward-match start-pos (last-position))])
-        (and end-pos
-             (member (get-text start-pos end-pos)
-                     '("'" "," ",@" "`"
-                           "#'" "#," "#`" "#,@"
-                           "#&" "#;"
-                           "#hash" "#hasheq"
-                           "#ci" "#cs")))))
+      (define last (last-position))
+      (define fm-promise (delay (forward-match start-pos last)))
+      (let ([s-1 (get-text start-pos (+ start-pos 1))]
+            [s-2 (get-text start-pos (+ start-pos 2))]
+            [s-3 (get-text start-pos (+ start-pos 3))]
+            [s-5 (get-text start-pos (+ start-pos 5))]
+            [s-7 (get-text start-pos (+ start-pos 7))])
+        (or (and (member s-1 '("'" "," "`"))
+                 (equal? (force fm-promise)
+                         (+ start-pos 1)))
+            (and (member s-2 '(",@" "#'" "#," "#`"
+                                "#&" "#;"))
+                 (equal? (force fm-promise)
+                         (+ start-pos 2)))
+            (and (member s-3 '("#,@" "#ci" "#cs"))
+                 (equal? (force fm-promise)
+                         (+ start-pos 3)))
+            (and (member s-5 '("#hash"))
+                 (equal? (force fm-promise)
+                         (+ start-pos 5)))
+            (and (member s-7 '("#hasheq"))
+                 (equal? (force fm-promise)
+                         (+ start-pos 7))))))
+
     
     (define/public (get-forward-sexp start-pos) 
       ;; loop to work properly with quote, etc.
