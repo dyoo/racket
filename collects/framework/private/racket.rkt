@@ -6,7 +6,9 @@
 (require string-constants
          racket/class
          mred/mred-sig
+         racket/string
          syntax-color/module-lexer
+         profile
          (prefix-in time-acc: syntax-color/private/time-acc)
          "collapsed-snipclass-helpers.rkt"
          "sig.rkt"
@@ -718,7 +720,9 @@
     
     (define/public (tabify-selection [start-pos (get-start-position)]
                                      [end-pos (get-end-position)])
-      (unless (is-stopped?) 
+      (unless (is-stopped?)
+        (profile
+         (begin
         (define start-time time-acc:total-time)
         (define first-para (position-paragraph start-pos))
         (define end-para (position-paragraph end-pos))
@@ -750,7 +754,7 @@
              (when (< first-para end-para)
                (end-busy-cursor))
              (define stop-time time-acc:total-time)
-             (printf "tabify time: ~s\n" (- stop-time start-time)))))))
+             (printf "tabify time: ~s\n" (- stop-time start-time)))))))))
     
     (define (tabify-all) 
       (tabify-selection 0 (last-position)))
@@ -904,16 +908,39 @@
           (delete snip-pos (+ snip-pos 1)))
         (set-position pos pos)))
     
+
+    ;; stick-to-next-sexp?: natural -> boolean
+    (define stick-to-patterns
+      '("'" "," ",@" "`" "#'" "#," "#`" "#,@"
+        "#&" "#;" "#hash" "#hasheq" "#ci" "#cs"))
+    (define stick-to-patterns-union
+      (regexp (string-append 
+               "^("
+               (string-join (map regexp-quote stick-to-patterns) "|")
+               ")")))
+    (define stick-to-patterns-union-anchored
+      (regexp (string-append 
+               "^("
+               (string-join (map regexp-quote stick-to-patterns) "|")
+               ")$")))
+    (define stick-to-max-pattern-length 
+      (apply max (map string-length stick-to-patterns)))
+
     (define/public (stick-to-next-sexp? start-pos)
-      (let ([end-pos (forward-match start-pos (last-position))])
-        (and end-pos
-             (member (get-text start-pos end-pos)
-                     '("'" "," ",@" "`"
-                           "#'" "#," "#`" "#,@"
-                           "#&" "#;"
-                           "#hash" "#hasheq"
-                           "#ci" "#cs")))))
-    
+      ;; Optimization: speculatively check whether the string will
+      ;; match the patterns; at time of writing, forward-match can be
+      ;; really expensive.
+      (define snippet 
+        (get-text start-pos 
+                  (min (last-position) 
+                       (+ start-pos stick-to-max-pattern-length))))
+      (and (regexp-match stick-to-patterns-union snippet)
+           (let ([end-pos (forward-match start-pos (last-position))])
+             (and end-pos
+                  (regexp-match stick-to-patterns-union-anchored
+                                (get-text start-pos end-pos))
+                  #t))))
+       
     (define/public (get-forward-sexp start-pos) 
       ;; loop to work properly with quote, etc.
       (let loop ([one-forward (forward-match start-pos (last-position))])

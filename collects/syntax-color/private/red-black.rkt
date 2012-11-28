@@ -72,7 +72,7 @@
           [node-parent (node? . -> . node?)]
           [node-left (node? . -> . node?)]
           [node-right (node? . -> . node?)]
-          [node-color (node? . -> . (or/c 'red 'black))]
+          #;[node-color (node? . -> . (or/c 'red 'black))]
           [rename public:red? red? (node? . -> . boolean?)]
           [rename public:black? black? (node? . -> . boolean?)]
 
@@ -1271,7 +1271,7 @@
            node-parent
            node-left
            node-right
-           node-color
+           #;node-color
            [rename-out [public:red? red?]
                        [public:black? black?]]
            new-tree

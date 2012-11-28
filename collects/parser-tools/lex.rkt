@@ -227,6 +227,7 @@
   
   (define (lexer-body start-state trans-table actions no-lookahead special-action
                       has-special-comment-action? special-comment-action eof-action)
+
     (letrec ((lexer
               (lambda (ip)
                 (let ((first-pos (get-position ip))

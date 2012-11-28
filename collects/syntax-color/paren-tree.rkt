@@ -151,6 +151,8 @@
           ((and (not (send tree is-empty?))
                 (is-open? (paren-type (send tree get-root-data)))
                 (= (send tree get-root-start-position) pos))
+           (define pos-paren-len 
+             (paren-length (send tree get-root-data)))
            (let ((end
                   (let/ec ret
                     (do-match-forward (node-right (send tree get-root))
@@ -164,8 +166,7 @@
                (else
                 (send tree search-max!)
                 (let ((end (send tree get-root-end-position)))
-                  (send tree search! pos)
-                  (values pos (+ pos (paren-length (send tree get-root-data))) end))))))
+                  (values pos (+ pos pos-paren-len) end))))))
           (else
            (values #f #f #f))))
       

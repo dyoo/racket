@@ -90,18 +90,10 @@
       (rb:nil-node? focus))
 
     (define/public (get-root-length)
-      (cond
-        [(rb:nil-node? focus)
-         0]
-        [else
-         (rb:node-self-width focus)]))
+      (rb:node-self-width focus))
 
     (define/public (get-root-data)
-      (cond
-        [(rb:nil-node? focus)
-         #f]
-        [else
-         (rb:node-data focus)]))
+      (rb:node-data focus))
 
     (define/public (get-root-start-position)
       (cond
