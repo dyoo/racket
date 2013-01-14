@@ -90,10 +90,11 @@
 ;; ----------------------------------------------------------------------------
 ;; Parsing: JSON -> Racket
 
-(require syntax/readerr)
+(require syntax/readerr racket/port)
 
 (provide read-json)
-(define (read-json [i (current-input-port)] #:null [jsnull (json-null)])
+(define (read-json [-in (current-input-port)] #:null [jsnull (json-null)])
+  (define i (open-input-string (port->string -in)))
   ;; Follows the specification (eg, at json.org) -- no extensions.
   ;;
   (define (err fmt . args)
@@ -107,7 +108,7 @@
   (define (read-string)
     (let loop ([l* '()])
       ;; note: use a string regexp to extract utf-8-able text
-      (define m (cdr (or (regexp-try-match #rx"^(.*?)(\"|\\\\(.))" i)
+      (define m (cdr (or (regexp-try-match #rx"^([^\"\\]*)(\"|\\\\(.))" i)
                          (err "unterminated string"))))
       (define l (if ((bytes-length (car m)) . > . 0) (cons (car m) l*) l*))
       (define esc (caddr m))
@@ -136,15 +137,22 @@
            (loop (cons (string->bytes/utf-8 (string (integer->char e*))) l)))]
         [else (err "bad string escape: \"~a\"" esc)])))
   ;;
-  (define (read-list what end-rx read-one)
+  (define (read-list what end-char read-one)
     (skip-whitespace)
-    (if (regexp-try-match end-rx i)
-      '()
-      (let loop ([l (list (read-one))])
-        (skip-whitespace)
-        (cond [(regexp-try-match end-rx i) (reverse l)]
-              [(regexp-try-match #rx#"^," i) (loop (cons (read-one) l))]
-              [else (err "error while parsing a json ~a" what)]))))
+    (cond [(char=? end-char (peek-char i))
+           (read-char i)
+           '()]
+          [else
+           (let loop ([l (list (read-one))])
+             (skip-whitespace)
+             (cond [(char=? end-char (peek-char i))
+                    (read-char i)
+                    (reverse l)]
+                   [(char=? #\, (peek-char i))
+                    (read-char i) 
+                    (loop (cons (read-one) l))]
+                   [else 
+                    (err "error while parsing a json ~a" what)]))]))
   ;;
   (define (read-hash)
     (define (read-pair)
@@ -154,7 +162,7 @@
       (unless (regexp-try-match #rx#"^:" i)
         (err "error while parsing a json object pair"))
       (list (string->symbol k) (read-json)))
-    (apply hasheq (apply append (read-list 'object #rx#"^}" read-pair))))
+    (apply hasheq (apply append (read-list 'object #\} read-pair))))
   ;;
   (define (read-json [top? #f])
     (skip-whitespace)
@@ -170,7 +178,7 @@
        => (λ (m)
             (let ([m (car m)])
               (cond [(equal? m #"\"") (read-string)]
-                    [(equal? m #"[")  (read-list 'array #rx#"^\\]" read-json)]
+                    [(equal? m #"[")  (read-list 'array #\] read-json)]
                     [(equal? m #"{")  (read-hash)])))]
       [else (err "bad input")]))
   ;;
