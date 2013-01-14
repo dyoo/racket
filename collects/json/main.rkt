@@ -90,7 +90,7 @@
 ;; ----------------------------------------------------------------------------
 ;; Parsing: JSON -> Racket
 
-(require syntax/readerr racket/port)
+(require syntax/readerr)
 
 (provide read-json)
 (define (read-json [i (current-input-port)] #:null [jsnull (json-null)])
@@ -112,29 +112,29 @@
       (define l (if ((bytes-length (car m)) . > . 0) (cons (car m) l*) l*))
       (define esc (caddr m))
       (cond
-        [(not esc) (bytes->string/utf-8 (apply bytes-append (reverse l)))]
-        [(assoc esc '([#"b" . #"\b"] [#"n" . #"\n"] [#"r" . #"\r"]
-                      [#"f" . #"\f"] [#"t" . #"\t"]
-                      [#"\\" . #"\\"] [#"\"" . #"\""] [#"/" . #"/"]))
-         => (λ (m) (loop (cons (cdr m) l)))]
-        [(equal? esc #"u")
-         (let* ([e (or (regexp-try-match #px#"^[a-fA-F0-9]{4}" i)
-                       (err "bad string \\u escape"))]
-                [e (string->number (bytes->string/utf-8 (car e)) 16)])
-           (define e*
-             (if (<= #xD800 e #xDFFF)
-               ;; it's the first part of a UTF-16 surrogate pair
-               (let* ([e2 (or (regexp-try-match #px#"^\\\\u([a-fA-F0-9]{4})" i)
-                              (err "bad string \\u escape, ~a"
-                                   "missing second half of a UTF16 pair"))]
-                      [e2 (string->number (bytes->string/utf-8 (cadr e2)) 16)])
-                 (if (<= #xDC00 e2 #xDFFF)
-                   (+ (arithmetic-shift (- e #xD800) 10) (- e2 #xDC00) #x10000)
-                   (err "bad string \\u escape, ~a"
-                        "bad second half of a UTF16 pair")))
-               e)) ; single \u escape
-           (loop (cons (string->bytes/utf-8 (string (integer->char e*))) l)))]
-        [else (err "bad string escape: \"~a\"" esc)])))
+       [(not esc) (bytes->string/utf-8 (apply bytes-append (reverse l)))]
+       [(assoc esc '([#"b" . #"\b"] [#"n" . #"\n"] [#"r" . #"\r"]
+                     [#"f" . #"\f"] [#"t" . #"\t"]
+                     [#"\\" . #"\\"] [#"\"" . #"\""] [#"/" . #"/"]))
+        => (λ (m) (loop (cons (cdr m) l)))]
+       [(equal? esc #"u")
+        (let* ([e (or (regexp-try-match #px#"^[a-fA-F0-9]{4}" i)
+                      (err "bad string \\u escape"))]
+               [e (string->number (bytes->string/utf-8 (car e)) 16)])
+          (define e*
+            (if (<= #xD800 e #xDFFF)
+                ;; it's the first part of a UTF-16 surrogate pair
+                (let* ([e2 (or (regexp-try-match #px#"^\\\\u([a-fA-F0-9]{4})" i)
+                               (err "bad string \\u escape, ~a"
+                                    "missing second half of a UTF16 pair"))]
+                       [e2 (string->number (bytes->string/utf-8 (cadr e2)) 16)])
+                  (if (<= #xDC00 e2 #xDFFF)
+                      (+ (arithmetic-shift (- e #xD800) 10) (- e2 #xDC00) #x10000)
+                      (err "bad string \\u escape, ~a"
+                           "bad second half of a UTF16 pair")))
+                e)) ; single \u escape
+          (loop (cons (string->bytes/utf-8 (string (integer->char e*))) l)))]
+       [else (err "bad string escape: \"~a\"" esc)])))
   ;;
   (define (read-list what end-char read-one)
     (skip-whitespace)
