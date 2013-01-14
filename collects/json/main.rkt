@@ -93,8 +93,7 @@
 (require syntax/readerr racket/port)
 
 (provide read-json)
-(define (read-json [-in (current-input-port)] #:null [jsnull (json-null)])
-  (define i (open-input-string (port->string -in)))
+(define (read-json [i (current-input-port)] #:null [jsnull (json-null)])
   ;; Follows the specification (eg, at json.org) -- no extensions.
   ;;
   (define (err fmt . args)
@@ -161,8 +160,8 @@
       (skip-whitespace)
       (unless (regexp-try-match #rx#"^:" i)
         (err "error while parsing a json object pair"))
-      (list (string->symbol k) (read-json)))
-    (apply hasheq (apply append (read-list 'object #\} read-pair))))
+      (cons (string->symbol k) (read-json)))
+    (make-immutable-hasheq (read-list 'object #\} read-pair)))
   ;;
   (define (read-json [top? #f])
     (skip-whitespace)
