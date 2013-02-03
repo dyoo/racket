@@ -82,9 +82,8 @@
                                 #:security-guard (and use-current-security-guard?
                                                       (current-security-guard))))
     (let* ([cd (find-collects-dir)]
-           [no-dirs (if cd 
-                        (list (CACHE-DIR) cd)
-                        (list (CACHE-DIR)))])
+           [ad (find-system-path 'addon-dir)]
+           [no-dirs (filter values (list (CACHE-DIR) cd ad))])
       (manager-skip-file-handler
        (λ (p) (file-stamp-in-paths p no-dirs))))))
 
