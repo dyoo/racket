@@ -20,7 +20,8 @@
            = < > <= >= max min + - * / 
            abs gcd lcm exp log sin cos tan not eq?
            call-with-current-continuation make-string
-           symbol->string string->symbol make-rectangular 
+           (rename-out [r5rs:symbol->string symbol->string]) 
+           string->symbol make-rectangular 
            exact->inexact inexact->exact number->string string->number 
            rationalize output-port? current-input-port current-output-port current-error-port 
            open-input-file open-output-file close-input-port close-output-port
@@ -526,9 +527,16 @@
          (syntax/loc stx (cond . rest)))]))
 
 
-  (define-syntax-rule (mk-undefined id) undefined)
+    (define-syntax-rule (mk-undefined id) undefined)
     
-  (provide unquote unquote-splicing 
+    ;; r5rs:symbol->string: symbol ->string
+    ;; r5rs defines symbol->string to produce immutable strings.
+    (define (r5rs:symbol->string s)
+      (unless (symbol? s)
+        (raise-type-error 'symbol->string "symbol" s))
+      (string->immutable-string (symbol->string s)))
+    
+    (provide unquote unquote-splicing 
 	   (rename-out [r5rs:quote quote]
                        [r5rs:quasiquote quasiquote]
                        [r5rs:if if]
